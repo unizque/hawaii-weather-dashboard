@@ -1,4 +1,4 @@
-import type { Geometry } from 'geojson';
+import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 
 export type IslandId = 'kauai' | 'oahu' | 'molokai' | 'maui' | 'hawaii';
 
@@ -68,8 +68,38 @@ export interface TropicalSystem {
   advisoryNumber: string | null;
   updatedAt: string;
   advisoryUrl: string | null;
+  forecastAdvisoryUrl: string | null;
   discussionUrl: string | null;
   graphicsUrl: string | null;
+  windProbabilitiesUrl: string | null;
+  coneUrl: string | null;
+  products: TropicalProducts;
+}
+
+export interface TropicalForecastPoint {
+  tauHours: number;
+  validAt: string;
+  latitude: number;
+  longitude: number;
+  intensityKt: number | null;
+  pressureMb: number | null;
+}
+
+export type GuidanceKind = 'consensus' | 'global' | 'hurricane';
+
+export interface ModelGuidanceTrack {
+  id: string;
+  name: string;
+  kind: GuidanceKind;
+  initializedAt: string;
+  points: TropicalForecastPoint[];
+}
+
+export interface TropicalProducts {
+  cone: FeatureCollection<Geometry, GeoJsonProperties> | null;
+  warnings: FeatureCollection<Geometry, GeoJsonProperties> | null;
+  forecast: TropicalForecastPoint[];
+  guidance: ModelGuidanceTrack[];
 }
 
 export interface BuoyReading {

@@ -1,7 +1,6 @@
 import { BellRing, ChevronRight, ShieldCheck } from 'lucide-react';
 import { formatHstTime, severityTone } from '../lib/weather';
 import type { FeedStatus, WeatherAlert } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
 
 interface AlertsPanelProps {
   alerts: WeatherAlert[];
@@ -16,7 +15,7 @@ export function AlertsPanel({ alerts, status }: AlertsPanelProps) {
           <span className="overline">Watches & warnings</span>
           <h3>Statewide alerts</h3>
         </div>
-        <FeedBadge status={status} />
+        <BellRing size={19} aria-hidden="true" />
       </div>
 
       <div className="alerts-panel__body">
@@ -25,7 +24,7 @@ export function AlertsPanel({ alerts, status }: AlertsPanelProps) {
         ) : alerts.length === 0 ? (
           <div className={`empty-state ${status === 'live' ? 'is-clear' : ''}`}>
             <ShieldCheck size={21} />
-            <p>{status === 'live' ? 'No active statewide alerts.' : 'Live alerts are temporarily unavailable.'}</p>
+            <p>{status === 'live' ? 'No active statewide alerts.' : 'Alerts are temporarily unavailable.'}</p>
           </div>
         ) : (
           alerts.slice(0, 2).map((alert) => (

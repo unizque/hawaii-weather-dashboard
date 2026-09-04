@@ -4,14 +4,15 @@ Pacific Signal is a Hawaiʻi-first weather and tropical-cyclone dashboard with a
 
 > **Educational project:** Pacific Signal is not an official warning service. During hazardous weather, follow guidance from the National Weather Service, local authorities, and emergency management.
 
-## First-build capabilities
+## Capabilities
 
 - Live point forecasts and latest observations for Kauaʻi, Oʻahu, Molokaʻi, Maui, and Hawaiʻi Island
 - Statewide NWS watches, warnings, advisories, and map geometry
-- Current Central and Eastern Pacific tropical systems from the National Hurricane Center
-- NDBC buoy observations refreshed during the GitHub Pages build
-- Island and Pacific map extents with storm motion vectors
-- Explicit Live, Cached, Preview, and Offline data states
+- Dedicated tropical weather center with official forecast cones, forecast points, coastal warnings, and advisory links
+- Selected ATCF model-guidance tracks, clearly separated from the official NHC/CPHC forecast
+- Current NWS Hawaiʻi radar reflectivity as an optional map layer
+- Mapped NDBC buoy observations refreshed during the GitHub Pages build
+- Friendly island and Pacific map extents with independent radar, alert, buoy, cone, and guidance controls
 - Responsive layouts for desktop, tablet, and mobile
 - Automated verification and GitHub Pages deployment
 
@@ -21,11 +22,17 @@ Pacific Signal is a Hawaiʻi-first weather and tropical-cyclone dashboard with a
 Browser
   ├─ NWS API (forecast, observations, alerts)
   ├─ NHC CurrentStorms.json (live when CORS permits)
+  ├─ NWS Hawaiʻi radar WMS (loaded only when selected)
   └─ Bundled weather cache
-       └─ GitHub Actions sync (NHC + NDBC)
+       └─ GitHub Actions sync
+            ├─ NHC cone / warning KMZ products
+            ├─ NHC ATCF public model guidance
+            └─ NDBC buoy observations
 ```
 
-GitHub Pages is a static host, so the application never embeds API secrets. Network access is isolated in typed modules under `src/services`; pure conversions and weather-domain logic live under `src/lib` with unit tests. The scheduled Pages build refreshes public NOAA products without committing generated data back into the repository.
+GitHub Pages is a static host, so the application never embeds API secrets. Network access is isolated in typed modules under `src/services`; pure conversions and weather-domain logic live under `src/lib` with unit tests. The scheduled Pages build converts official NHC GIS products to lightweight GeoJSON and refreshes public NOAA products without committing generated data back into the repository.
+
+Model guidance is sourced from NOAA's public ATCF A-decks. It is intentionally hidden by default, limited to selected operational aids, and labeled as guidance rather than an official forecast.
 
 ## Local development
 
@@ -57,16 +64,27 @@ The sync script retains the previous cache when an upstream product is temporari
 - [National Weather Service API](https://www.weather.gov/documentation/services-web-api)
 - [NWS Honolulu Forecast Office](https://www.weather.gov/hfo/)
 - [National Hurricane Center](https://www.nhc.noaa.gov/)
+- [NHC GIS products](https://www.nhc.noaa.gov/gis/)
+- [NHC ATCF data](https://ftp.nhc.noaa.gov/atcf/README)
+- [NWS RIDGE2 radar services](https://www.weather.gov/radarfaq/)
 - [National Data Buoy Center](https://www.ndbc.noaa.gov/)
 - [OpenStreetMap](https://www.openstreetmap.org/copyright) map tiles and contributors
 
-All displayed timestamps are converted to Hawaiʻi Standard Time where appropriate. Source timestamps and feed state remain visible so stale or fallback data cannot be mistaken for a current observation.
+All displayed timestamps are converted to Hawaiʻi Standard Time where appropriate. The interface shows useful update times and only raises a data notice when observations are delayed.
+
+## Performance approach
+
+- Radar imagery is off by default and requested only when a visitor enables it.
+- The tropical workspace is code-split from the island overview.
+- Map vectors use Leaflet's canvas renderer and model guidance is capped to selected tracks and five forecast days.
+- Tile buffers and animations are intentionally conservative for mobile hardware.
+- No client-side charting or GIS parsing libraries are shipped to visitors; NHC KMZ conversion happens during deployment.
 
 ## Deployment
 
 The Pages workflow runs after a push to `main`, on manual dispatch, and hourly at minute 17. Before deployment it refreshes the weather cache, runs the test suite, creates a production build, and publishes `dist/` using GitHub's official Pages actions.
 
-After merging the initial pull request, enable deployment in **Repository Settings → Pages → Build and deployment → GitHub Actions**. The expected URL is:
+The public URL is:
 
 `https://unizque.github.io/hawaii-weather-dashboard/`
 

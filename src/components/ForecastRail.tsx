@@ -1,21 +1,19 @@
 import { Umbrella, Wind } from 'lucide-react';
-import type { FeedStatus, ForecastPeriod, IslandDefinition } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
+import type { ForecastPeriod, IslandDefinition } from '../types/weather';
 import { WeatherGlyph } from './WeatherGlyph';
 
 interface ForecastRailProps {
   island: IslandDefinition;
   periods: ForecastPeriod[];
-  status: FeedStatus;
 }
 
-export function ForecastRail({ island, periods, status }: ForecastRailProps) {
+export function ForecastRail({ island, periods }: ForecastRailProps) {
   return (
     <section className="panel forecast-rail">
       <div className="forecast-rail__title">
         <span className="overline">Island outlook</span>
         <h3>{island.name}</h3>
-        <FeedBadge status={status} />
+        <span className="forecast-rail__hint">7 periods</span>
       </div>
       <div className="forecast-rail__periods" tabIndex={0} aria-label={`${island.name} forecast periods`}>
         {periods.slice(0, 7).map((period) => (

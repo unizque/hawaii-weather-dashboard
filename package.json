@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "check": "tsc -b --pretty false",
-    "test": "vitest run",
+    "test": "vitest run && node --test scripts/lib/*.test.mjs",
     "sync:data": "node scripts/sync-weather-data.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
+    "fflate": "^0.8.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.468.0",
     "react": "^19.1.1",

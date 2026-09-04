@@ -1,17 +1,15 @@
 import { Droplets, Gauge, MapPin, Navigation, Wind } from 'lucide-react';
 import { formatAge } from '../lib/weather';
-import type { CurrentConditions, FeedStatus, IslandDefinition } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
+import type { CurrentConditions, IslandDefinition } from '../types/weather';
 import { WeatherGlyph } from './WeatherGlyph';
 
 interface ConditionsPanelProps {
   island: IslandDefinition;
   conditions: CurrentConditions;
-  status: FeedStatus;
   updatedAt: string | null;
 }
 
-export function ConditionsPanel({ island, conditions, status, updatedAt }: ConditionsPanelProps) {
+export function ConditionsPanel({ island, conditions, updatedAt }: ConditionsPanelProps) {
   const metrics = [
     { label: 'Wind', value: `${conditions.windDirection} ${conditions.windSpeedMph}`, unit: 'mph', icon: Wind },
     { label: 'Humidity', value: conditions.humidityPercent, unit: '%', icon: Droplets },
@@ -26,7 +24,7 @@ export function ConditionsPanel({ island, conditions, status, updatedAt }: Condi
           <span className="overline">Current conditions</span>
           <h3>{island.localName}</h3>
         </div>
-        <FeedBadge status={status} />
+        <WeatherGlyph forecast={conditions.description} size={24} />
       </div>
 
       <div className="conditions-hero">
@@ -34,9 +32,7 @@ export function ConditionsPanel({ island, conditions, status, updatedAt }: Condi
           <strong>{conditions.temperatureF}</strong>
           <span>°F</span>
         </div>
-        <div className="conditions-hero__icon">
-          <WeatherGlyph forecast={conditions.description} size={48} />
-        </div>
+        <div className="conditions-hero__icon"><WeatherGlyph forecast={conditions.description} size={48} /></div>
       </div>
       <p className="conditions-summary">{conditions.description}</p>
 
