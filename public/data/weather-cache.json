@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-09-04T21:50:00.000Z",
+  "storms": [
+    {
+      "id": "ep122026",
+      "name": "Lowell",
+      "classification": "Hurricane",
+      "intensityKt": 130,
+      "pressureMb": 926,
+      "latitude": 13.2,
+      "longitude": -160.7,
+      "movementDirectionDegrees": 255,
+      "movementSpeedKt": 7,
+      "advisoryNumber": "035",
+      "updatedAt": "2026-09-04T21:00:00.000Z",
+      "advisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCPCP4.shtml",
+      "discussionUrl": "https://www.nhc.noaa.gov/text/HFOTCDCP4.shtml",
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp4.shtml"
+    },
+    {
+      "id": "ep132026",
+      "name": "Marie",
+      "classification": "Hurricane",
+      "intensityKt": 85,
+      "pressureMb": 972,
+      "latitude": 20.2,
+      "longitude": -118.6,
+      "movementDirectionDegrees": 285,
+      "movementSpeedKt": 8,
+      "advisoryNumber": "015",
+      "updatedAt": "2026-09-04T21:00:00.000Z",
+      "advisoryUrl": "https://www.nhc.noaa.gov/text/MIATCPEP3.shtml",
+      "discussionUrl": "https://www.nhc.noaa.gov/text/MIATCDEP3.shtml",
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_ep3.shtml"
+    },
+    {
+      "id": "ep112026",
+      "name": "Karina",
+      "classification": "Hurricane",
+      "intensityKt": 75,
+      "pressureMb": 978,
+      "latitude": 20.6,
+      "longitude": -141.1,
+      "movementDirectionDegrees": 280,
+      "movementSpeedKt": 10,
+      "advisoryNumber": "034",
+      "updatedAt": "2026-09-04T21:00:00.000Z",
+      "advisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCPCP5.shtml",
+      "discussionUrl": "https://www.nhc.noaa.gov/text/HFOTCDCP5.shtml",
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp5.shtml"
+    }
+  ],
+  "buoys": [
+    {
+      "stationId": "51001",
+      "name": "Northwest Hawaiʻi",
+      "latitude": 23.445,
+      "longitude": -162.279,
+      "observedAt": "2026-09-04T21:50:00.000Z",
+      "windSpeedKt": 15.6,
+      "gustKt": 19.4,
+      "waveHeightFt": null,
+      "dominantPeriodSeconds": null,
+      "pressureMb": 1014.7,
+      "waterTemperatureF": 80.1
+    }
+  ]
+}
