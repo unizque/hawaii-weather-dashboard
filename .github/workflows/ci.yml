@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   quality:
@@ -43,7 +42,6 @@ jobs:
           exit "$imagery_status"
 
       - name: Type-check
-        id: typecheck
         if: always()
         shell: bash
         run: |
@@ -71,25 +69,3 @@ jobs:
       - name: Confirm external services
         if: always()
         run: test "${{ steps.imagery.outcome }}" = "success"
-
-      - name: Report diagnostic output
-        if: always() && github.event_name == 'pull_request' && (steps.imagery.outcome != 'success' || steps.typecheck.outcome != 'success')
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          {
-            echo '<!-- pacific-signal-ci-diagnostics -->'
-            echo '### Validation diagnostics'
-            echo
-            echo '#### NOAA imagery check'
-            echo '```text'
-            sed -n '1,160p' imagery-check.log 2>/dev/null || true
-            echo '```'
-            echo
-            echo '#### Type-check'
-            echo '```text'
-            sed -n '1,200p' typecheck.log 2>/dev/null || true
-            echo '```'
-          } > diagnostics.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file diagnostics.md
