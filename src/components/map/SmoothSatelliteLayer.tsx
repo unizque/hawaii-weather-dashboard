@@ -24,8 +24,10 @@ interface SatelliteRequest {
 
 function captureViewport(map: LeafletMap): SatelliteViewport {
   const bounds = map.getBounds();
-  const southWest = map.options.crs.project(bounds.getSouthWest());
-  const northEast = map.options.crs.project(bounds.getNorthEast());
+  const crs = map.options.crs;
+  if (!crs) throw new Error('The map coordinate reference system is unavailable.');
+  const southWest = crs.project(bounds.getSouthWest());
+  const northEast = crs.project(bounds.getNorthEast());
   const size = map.getSize();
   const pixelRatio = typeof window === 'undefined' ? 1 : Math.min(window.devicePixelRatio || 1, 1.35);
   const width = Math.max(320, Math.min(1_400, Math.round(size.x * pixelRatio)));

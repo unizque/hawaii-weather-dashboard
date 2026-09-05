@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import { hawaiiReflectivityService } from '../src/data/radar.ts';
 import { pacificSatelliteService } from '../src/data/satellite.ts';
-import { parseRadarCapabilities } from '../src/lib/radar.ts';
-import { parseSatelliteCatalog, satelliteImageUrl } from '../src/services/satellite.ts';
 
 const githubPagesOrigin = 'https://unizque.github.io';
 
@@ -33,6 +31,28 @@ function satelliteCatalogUrl() {
   return url;
 }
 
+function satelliteTimes(payload) {
+  return (payload.features ?? [])
+    .map(({ attributes = {} }) => attributes.end_time ?? attributes.End_Time)
+    .filter((value) => typeof value === 'number' && Number.isFinite(value))
+    .sort((a, b) => a - b);
+}
+
+function satelliteImageUrl(frameTime) {
+  const url = new URL(`${pacificSatelliteService.serviceUrl}/exportImage`);
+  url.searchParams.set('bbox', '-20037508,-2504688,-14471533,4865942');
+  url.searchParams.set('bboxSR', '3857');
+  url.searchParams.set('imageSR', '3857');
+  url.searchParams.set('size', '320,220');
+  url.searchParams.set('format', 'jpgpng');
+  url.searchParams.set('compressionQuality', '76');
+  url.searchParams.set('interpolation', 'RSP_BilinearInterpolation');
+  url.searchParams.set('transparent', 'false');
+  url.searchParams.set('time', String(frameTime));
+  url.searchParams.set('f', 'image');
+  return url;
+}
+
 async function verifyRadar() {
   const response = await fetch(radarCapabilitiesUrl(), {
     headers: { Origin: githubPagesOrigin },
@@ -41,10 +61,12 @@ async function verifyRadar() {
   assert.equal(response.ok, true, `Hawaiʻi radar capabilities returned ${response.status}`);
   assertBrowserAccess(response, 'Hawaiʻi radar');
 
-  const capabilities = parseRadarCapabilities(await response.text());
-  assert.ok(capabilities.layerName, 'Hawaiʻi radar is missing its reflectivity layer');
-  assert.ok(capabilities.frames.length > 1, 'Hawaiʻi radar does not advertise animated history');
-  console.log(`Hawaiʻi radar: ${capabilities.layerName} · ${capabilities.frames.length} two-hour frames`);
+  const capabilities = await response.text();
+  const layerName = capabilities.match(/<Name>([^<]*(?:bref_qcd|sr_bref)[^<]*)<\/Name>/i)?.[1];
+  const timeDimension = capabilities.match(/<(?:Dimension|Extent)\b[^>]*name=["']time["'][^>]*>([^<]+)</i)?.[1];
+  assert.ok(layerName, 'Hawaiʻi radar is missing its reflectivity layer');
+  assert.ok(timeDimension?.includes('/') || timeDimension?.includes(','), 'Hawaiʻi radar does not advertise animated history');
+  console.log(`Hawaiʻi radar: ${layerName} · animated history available`);
 }
 
 async function verifySatellite() {
@@ -56,15 +78,12 @@ async function verifySatellite() {
   assertBrowserAccess(catalogResponse, 'GOES satellite catalog');
 
   const payload = await catalogResponse.json();
-  const frames = parseSatelliteCatalog(payload);
+  const frames = satelliteTimes(payload);
   assert.ok(frames.length > 1, 'GOES satellite catalog does not contain animated history');
 
-  const imageResponse = await fetch(satelliteImageUrl({
-    bbox: '-20037508,-2504688,-14471533,4865942',
-    width: 320,
-    height: 220,
-    frameTime: frames.at(-1),
-  }), {
+  const latestFrame = frames.at(-1);
+  assert.ok(latestFrame, 'GOES satellite catalog is missing its latest frame time');
+  const imageResponse = await fetch(satelliteImageUrl(latestFrame), {
     headers: { Origin: githubPagesOrigin },
     signal: AbortSignal.timeout(25_000),
   });
@@ -73,7 +92,7 @@ async function verifySatellite() {
   // image rendering does not require an Access-Control-Allow-Origin header.
   assert.match(imageResponse.headers.get('content-type') ?? '', /^image\//, 'GOES export did not return an image');
   assert.ok((await imageResponse.arrayBuffer()).byteLength > 1_000, 'GOES export returned an empty image');
-  console.log(`GOES satellite: ${frames.length} two-hour frames · export image available`);
+  console.log(`GOES satellite: ${frames.length} catalog frames · export image available`);
 }
 
 await Promise.all([verifyRadar(), verifySatellite()]);
