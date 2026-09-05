@@ -173,7 +173,7 @@ export function TropicalWorkspace({
               <ShieldAlert size={14} /> Warnings
             </button>
             <button type="button" aria-pressed={layers.radar} onClick={() => toggleLayer('radar')}>
-              <CloudRain size={14} /> Radar
+              <CloudRain size={14} /> Radar loop
             </button>
             <button type="button" aria-pressed={layers.buoys} onClick={() => toggleLayer('buoys')}>
               <RadioTower size={14} /> Buoys

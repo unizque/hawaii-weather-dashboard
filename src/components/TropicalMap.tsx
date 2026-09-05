@@ -1,13 +1,16 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { LatLngBoundsExpression, LatLngExpression, PathOptions } from 'leaflet';
-import { CircleMarker, GeoJSON, MapContainer, Polyline, Popup, Tooltip, useMap } from 'react-leaflet';
+import { Circle, CircleMarker, GeoJSON, MapContainer, Polyline, Popup, Tooltip, useMap } from 'react-leaflet';
 import { islands } from '../data/islands';
+import { radarRangeKm, type RadarMode } from '../data/radar';
+import { useRadarLoop } from '../hooks/useRadarLoop';
 import { modelColors, warningColor } from '../lib/tropical';
 import { stormCategory } from '../lib/weather';
 import type { BuoyReading, TropicalForecastPoint, TropicalSystem, WeatherAlert } from '../types/weather';
 import { BaseMapLayers } from './map/BaseMapLayers';
 import { BuoyMarkers } from './map/BuoyMarkers';
+import { RadarPlayback } from './map/RadarPlayback';
 
 export interface TropicalLayerState {
   cone: boolean;
@@ -91,6 +94,12 @@ function warningStyle(feature?: Feature<Geometry, GeoJsonProperties>): PathOptio
 
 export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps) {
   const warnings = useMemo(() => createWarningCollection(system, alerts), [alerts, system]);
+  const [radarMode, setRadarMode] = useState<RadarMode>('reflectivity');
+  const radar = useRadarLoop({
+    enabled: layers.radar,
+    mode: radarMode,
+    target: { latitude: system.latitude, longitude: system.longitude },
+  });
   const officialPositions: LatLngExpression[] = [
     [system.latitude, system.longitude],
     ...system.products.forecast.filter((point) => point.tauHours > 0).map(pointPosition),
@@ -110,7 +119,33 @@ export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps)
         worldCopyJump
       >
         <TropicalMapController system={system} />
-        <BaseMapLayers radarEnabled={layers.radar} />
+        <BaseMapLayers
+          radar={{
+            enabled: layers.radar && radar.hasCoverage,
+            serviceUrl: radar.serviceUrl,
+            layerName: radar.layerName,
+            frameTime: radar.frameTime,
+            mode: radarMode,
+          }}
+        />
+
+        {layers.radar && radarMode === 'velocity' && radar.nearestSite && (
+          <>
+            <Circle
+              center={[radar.nearestSite.latitude, radar.nearestSite.longitude]}
+              radius={radarRangeKm * 1_000}
+              pathOptions={{ color: '#6c4ccf', fillColor: '#6c4ccf', fillOpacity: 0.045, opacity: 0.5, weight: 1, dashArray: '6 6' }}
+              interactive={false}
+            />
+            <CircleMarker
+              center={[radar.nearestSite.latitude, radar.nearestSite.longitude]}
+              radius={5}
+              pathOptions={{ color: '#ffffff', fillColor: '#6c4ccf', fillOpacity: 1, weight: 2 }}
+            >
+              <Tooltip>{radar.nearestSite.id} · {radar.nearestSite.name} Doppler radar</Tooltip>
+            </CircleMarker>
+          </>
+        )}
 
         {layers.cone && system.products.cone && (
           <GeoJSON
@@ -193,9 +228,12 @@ export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps)
       </MapContainer>
 
       {layers.radar && (
-        <div className="radar-legend" aria-label="Radar reflectivity legend">
-          <span>Light rain</span><i /><i /><i /><i /><span>Heavy</span>
-        </div>
+        <RadarPlayback
+          mode={radarMode}
+          radar={radar}
+          onModeChange={setRadarMode}
+          stormName={system.name}
+        />
       )}
       <div className="tropical-map-key">
         <span><i className="key-line key-line--official" /> Official forecast</span>

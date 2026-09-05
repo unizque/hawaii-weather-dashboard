@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { BellRing, ChevronRight, ShieldCheck } from 'lucide-react';
 import { formatHstTime, severityTone } from '../lib/weather';
 import type { FeedStatus, WeatherAlert } from '../types/weather';
+import { AlertDetailsDialog } from './AlertDetailsDialog';
 
 interface AlertsPanelProps {
   alerts: WeatherAlert[];
@@ -8,6 +10,8 @@ interface AlertsPanelProps {
 }
 
 export function AlertsPanel({ alerts, status }: AlertsPanelProps) {
+  const [selectedAlert, setSelectedAlert] = useState<WeatherAlert | null>(null);
+
   return (
     <section className="panel alerts-panel">
       <div className="panel-heading panel-heading--compact">
@@ -28,7 +32,13 @@ export function AlertsPanel({ alerts, status }: AlertsPanelProps) {
           </div>
         ) : (
           alerts.slice(0, 2).map((alert) => (
-            <article className={`alert-item alert-item--${severityTone(alert.severity)}`} key={alert.id}>
+            <button
+              className={`alert-item alert-item--${severityTone(alert.severity)}`}
+              key={alert.id}
+              type="button"
+              aria-haspopup="dialog"
+              onClick={() => setSelectedAlert(alert)}
+            >
               <span className="alert-item__bar" aria-hidden="true" />
               <div>
                 <small>{alert.severity} · until {formatHstTime(alert.expiresAt, { hour: 'numeric', minute: '2-digit' })} HST</small>
@@ -36,10 +46,13 @@ export function AlertsPanel({ alerts, status }: AlertsPanelProps) {
                 <p>{alert.areaDescription}</p>
               </div>
               <ChevronRight size={16} aria-hidden="true" />
-            </article>
+            </button>
           ))
         )}
       </div>
+      {selectedAlert && (
+        <AlertDetailsDialog key={selectedAlert.id} alert={selectedAlert} onClose={() => setSelectedAlert(null)} />
+      )}
     </section>
   );
 }

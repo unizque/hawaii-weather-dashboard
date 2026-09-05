@@ -7,10 +7,10 @@ Pacific Signal is a Hawaiʻi-first weather and tropical-cyclone dashboard with a
 ## Capabilities
 
 - Live point forecasts and latest observations for Kauaʻi, Oʻahu, Molokaʻi, Maui, and Hawaiʻi Island
-- Statewide NWS watches, warnings, advisories, and map geometry
+- Statewide NWS watches, warnings, and advisories with full in-app details and official product links
 - Dedicated tropical weather center with official forecast cones, forecast points, coastal warnings, and advisory links
 - Selected ATCF model-guidance tracks, clearly separated from the official NHC/CPHC forecast
-- Current NWS Hawaiʻi radar reflectivity as an optional map layer
+- Two-hour NWS Hawaiʻi reflectivity loops plus radial-velocity views from the four island Doppler radars
 - Mapped NDBC buoy observations refreshed during the GitHub Pages build
 - Friendly island and Pacific map extents with independent radar, alert, buoy, cone, and guidance controls
 - Responsive layouts for desktop, tablet, and mobile
@@ -75,6 +75,8 @@ All displayed timestamps are converted to Hawaiʻi Standard Time where appropria
 ## Performance approach
 
 - Radar imagery is off by default and requested only when a visitor enables it.
+- Radar history uses one WMS layer at a time and advances through at most 13 frames rather than stacking image layers.
+- Doppler velocity is only offered within the nearest Hawaiʻi radar's approximate operational range; distant storms link to official NOAA satellite imagery.
 - The tropical workspace is code-split from the island overview.
 - Map vectors use Leaflet's canvas renderer and model guidance is capped to selected tracks and five forecast days.
 - Tile buffers and animations are intentionally conservative for mobile hardware.

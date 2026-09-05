@@ -1,9 +1,24 @@
 import { TileLayer, WMSTileLayer } from 'react-leaflet';
+import type { WMSParams } from 'leaflet';
+import type { RadarMode } from '../../data/radar';
 
-const NWS_HAWAII_RADAR_WMS =
-  'https://opengeo.ncep.noaa.gov/geoserver/hawaii/hawaii_bref_qcd/ows';
+export interface RadarLayerOptions {
+  enabled: boolean;
+  serviceUrl: string;
+  layerName: string | null;
+  frameTime: string | null;
+  mode: RadarMode;
+}
 
-export function BaseMapLayers({ radarEnabled }: { radarEnabled: boolean }) {
+export function BaseMapLayers({ radar }: { radar: RadarLayerOptions }) {
+  const radarParams: (WMSParams & { time?: string }) | null = radar.layerName ? {
+    layers: radar.layerName,
+    format: 'image/png',
+    transparent: true,
+    version: '1.1.1',
+    ...(radar.frameTime ? { time: radar.frameTime } : {}),
+  } : null;
+
   return (
     <>
       <TileLayer
@@ -12,17 +27,13 @@ export function BaseMapLayers({ radarEnabled }: { radarEnabled: boolean }) {
         updateWhenIdle
         keepBuffer={1}
       />
-      {radarEnabled && (
+      {radar.enabled && radar.layerName && radarParams && (
         <WMSTileLayer
+          key={`${radar.serviceUrl}-${radar.layerName}`}
           attribution="Radar: NOAA / National Weather Service"
-          url={NWS_HAWAII_RADAR_WMS}
-          params={{
-            layers: 'hawaii_bref_qcd',
-            format: 'image/png',
-            transparent: true,
-            version: '1.1.1',
-          }}
-          opacity={0.68}
+          url={radar.serviceUrl}
+          params={radarParams}
+          opacity={radar.mode === 'velocity' ? 0.76 : 0.68}
           zIndex={280}
           updateWhenIdle
           keepBuffer={1}

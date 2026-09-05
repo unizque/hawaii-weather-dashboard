@@ -25,6 +25,20 @@ jobs:
       - name: Exercise NOAA data sync
         run: npm run sync:data
 
+      - name: Verify NOAA radar history
+        shell: bash
+        run: |
+          set +e
+          npm run verify:radar 2>&1 | tee radar-check.log
+          radar_status=${PIPESTATUS[0]}
+          {
+            echo '### NOAA radar service check'
+            echo '```text'
+            sed -n '1,120p' radar-check.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$radar_status"
+
       - name: Type-check
         shell: bash
         run: |

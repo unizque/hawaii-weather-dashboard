@@ -4,6 +4,7 @@ import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet';
 import { CircleMarker, GeoJSON, MapContainer, Popup, Tooltip, useMap } from 'react-leaflet';
 import { CloudRain, Layers3, LocateFixed, RadioTower } from 'lucide-react';
 import { islands } from '../data/islands';
+import { useRadarLoop } from '../hooks/useRadarLoop';
 import { degreesToCompass, stormCategory } from '../lib/weather';
 import type {
   BuoyReading,
@@ -14,6 +15,7 @@ import type {
 } from '../types/weather';
 import { BaseMapLayers } from './map/BaseMapLayers';
 import { BuoyMarkers } from './map/BuoyMarkers';
+import { RadarPlayback } from './map/RadarPlayback';
 
 export type MapMode = 'islands' | 'pacific';
 
@@ -91,6 +93,7 @@ export function HawaiiMap({
   const [radarEnabled, setRadarEnabled] = useState(false);
   const [buoysEnabled, setBuoysEnabled] = useState(true);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
+  const radar = useRadarLoop({ enabled: radarEnabled, mode: 'reflectivity' });
 
   return (
     <section className="panel map-panel" aria-label="Interactive Central Pacific map">
@@ -110,7 +113,7 @@ export function HawaiiMap({
           </div>
           <div className="map-layer-pills" aria-label="Map layers">
             <button type="button" aria-pressed={radarEnabled} onClick={() => setRadarEnabled((value) => !value)}>
-              <CloudRain size={14} /> Radar
+              <CloudRain size={14} /> Radar loop
             </button>
             <button type="button" aria-pressed={buoysEnabled} onClick={() => setBuoysEnabled((value) => !value)}>
               <RadioTower size={14} /> Buoys
@@ -140,7 +143,15 @@ export function HawaiiMap({
             systems={systems}
             selectedSystemId={selectedSystemId}
           />
-          <BaseMapLayers radarEnabled={radarEnabled} />
+          <BaseMapLayers
+            radar={{
+              enabled: radarEnabled,
+              serviceUrl: radar.serviceUrl,
+              layerName: radar.layerName,
+              frameTime: radar.frameTime,
+              mode: 'reflectivity',
+            }}
+          />
 
           {alertsEnabled && alertCollection.features.length > 0 && (
             <GeoJSON
@@ -214,11 +225,7 @@ export function HawaiiMap({
           })}
         </MapContainer>
 
-        {radarEnabled && (
-          <div className="radar-legend" aria-label="Radar reflectivity legend">
-            <span>Light rain</span><i /><i /><i /><i /><span>Heavy</span>
-          </div>
-        )}
+        {radarEnabled && <RadarPlayback mode="reflectivity" radar={radar} />}
         <div className="map-legend" aria-label="Map legend">
           <span><i className="legend-dot legend-dot--island" /> Island</span>
           <span><i className="legend-dot legend-dot--buoy" /> NOAA buoy</span>
