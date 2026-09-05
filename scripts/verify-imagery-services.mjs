@@ -69,7 +69,8 @@ async function verifySatellite() {
     signal: AbortSignal.timeout(25_000),
   });
   assert.equal(imageResponse.ok, true, `GOES satellite image returned ${imageResponse.status}`);
-  assertBrowserAccess(imageResponse, 'GOES satellite image');
+  // The browser displays this response as an <img>; unlike the JSON catalog fetch,
+  // image rendering does not require an Access-Control-Allow-Origin header.
   assert.match(imageResponse.headers.get('content-type') ?? '', /^image\//, 'GOES export did not return an image');
   assert.ok((await imageResponse.arrayBuffer()).byteLength > 1_000, 'GOES export returned an empty image');
   console.log(`GOES satellite: ${frames.length} two-hour frames · export image available`);
