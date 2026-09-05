@@ -26,7 +26,20 @@ jobs:
         run: npm run sync:data
 
       - name: Type-check
-        run: npm run check
+        shell: bash
+        run: |
+          set +e
+          npm run check 2>&1 | tee typecheck.log
+          typecheck_status=${PIPESTATUS[0]}
+          if [ "$typecheck_status" -ne 0 ]; then
+            {
+              echo '### Type-check output'
+              echo '```text'
+              sed -n '1,120p' typecheck.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$typecheck_status"
 
       - name: Unit tests
         run: npm run test

@@ -40,7 +40,10 @@ export function BuoyPanel({ buoys, status, updatedAt }: BuoyPanelProps) {
           <p>{buoy.name} · {formatAge(buoy.observedAt || updatedAt)}</p>
         </div>
       ) : (
-        <div className="empty-state"><Waves size={20} /><p>Waiting for the next buoy sync.</p></div>
+        <div className="empty-state">
+          <Waves size={20} />
+          <p>{status === 'loading' ? 'Checking the buoy network…' : 'Buoy observations are temporarily unavailable.'}</p>
+        </div>
       )}
     </section>
   );
