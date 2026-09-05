@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { ExternalLink, Info, Radio } from 'lucide-react';
 import { AlertsPanel } from './components/AlertsPanel';
-import { BuoyPanel } from './components/BuoyPanel';
 import { ConditionsPanel } from './components/ConditionsPanel';
 import { ForecastRail } from './components/ForecastRail';
 import { HawaiiMap, type MapMode } from './components/HawaiiMap';
@@ -27,7 +26,6 @@ function App() {
     forecast,
     alerts,
     storms,
-    buoys,
     refresh,
   } = useDashboardData();
   const [activeView, setActiveView] = useState<DashboardView>('overview');
@@ -39,13 +37,13 @@ function App() {
     setSelectedSystemId(storms.data[0]?.id ?? null);
   }, [selectedSystemId, storms.data]);
 
-  const statuses = [conditions.status, alerts.status, storms.status, buoys.status];
+  const statuses = [conditions.status, alerts.status, storms.status];
   const isRefreshing = statuses.some((status) => status === 'loading');
   const hasDelayedData = statuses.some((status) => status === 'preview' || status === 'unavailable');
 
   const handleViewChange = (view: DashboardView) => {
     setActiveView(view);
-    if (view === 'overview' || view === 'marine' || view === 'alerts') setMapMode('islands');
+    if (view === 'overview') setMapMode('islands');
   };
 
   const handleSystemSelect = (system: TropicalSystem) => {
@@ -66,7 +64,6 @@ function App() {
               systems={storms.data}
               selectedSystemId={selectedSystemId}
               alerts={alerts.data}
-              buoys={buoys.data}
               onSelectSystem={handleSystemSelect}
               onBack={() => handleViewChange('overview')}
             />
@@ -76,7 +73,6 @@ function App() {
             <StatusRibbon
               alertCount={alerts.data.length}
               systemCount={storms.data.length}
-              buoyCount={buoys.data.length}
               updatedAt={conditions.updatedAt ?? forecast.updatedAt ?? storms.updatedAt}
             />
 
@@ -109,7 +105,6 @@ function App() {
                 selectedSystemId={selectedSystemId}
                 alerts={alerts.data}
                 systems={storms.data}
-                buoys={buoys.data}
                 mode={mapMode}
                 onModeChange={setMapMode}
                 onSelectIsland={(id) => {
@@ -126,7 +121,6 @@ function App() {
                   updatedAt={conditions.updatedAt}
                 />
                 <AlertsPanel alerts={alerts.data} status={alerts.status} />
-                <BuoyPanel buoys={buoys.data} status={buoys.status} updatedAt={buoys.updatedAt} />
               </aside>
             </main>
 
@@ -135,7 +129,7 @@ function App() {
         )}
 
         <footer className="site-footer">
-          <div><Radio size={13} aria-hidden="true" /><span>NOAA · NWS Honolulu · NHC/CPHC · NDBC</span></div>
+          <div><Radio size={13} aria-hidden="true" /><span>NOAA · NWS Honolulu · NHC/CPHC · NESDIS</span></div>
           <p><Info size={13} aria-hidden="true" /> Weather awareness only — follow official emergency guidance.</p>
           <a href="https://www.weather.gov/hfo/" target="_blank" rel="noreferrer">
             Official forecasts <ExternalLink size={12} />

@@ -1,30 +1,28 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { LatLngBoundsExpression, LatLngExpression, PathOptions } from 'leaflet';
-import { Circle, CircleMarker, GeoJSON, MapContainer, Polyline, Popup, Tooltip, useMap } from 'react-leaflet';
+import { CircleMarker, GeoJSON, MapContainer, Marker, Polyline, Popup, Tooltip, useMap } from 'react-leaflet';
 import { islands } from '../data/islands';
-import { radarRangeKm, type RadarMode } from '../data/radar';
-import { useRadarLoop } from '../hooks/useRadarLoop';
-import { modelColors, warningColor } from '../lib/tropical';
+import { useSatelliteLoop } from '../hooks/useSatelliteLoop';
+import { forecastIntensityCode, modelColors, warningColor } from '../lib/tropical';
 import { stormCategory } from '../lib/weather';
-import type { BuoyReading, TropicalForecastPoint, TropicalSystem, WeatherAlert } from '../types/weather';
+import type { TropicalForecastPoint, TropicalSystem, WeatherAlert } from '../types/weather';
 import { BaseMapLayers } from './map/BaseMapLayers';
-import { BuoyMarkers } from './map/BuoyMarkers';
-import { RadarPlayback } from './map/RadarPlayback';
+import { LoopPlayback } from './map/LoopPlayback';
+import { SmoothSatelliteLayer } from './map/SmoothSatelliteLayer';
+import { forecastPointIcon, stormMapIcon } from './map/stormIcons';
 
 export interface TropicalLayerState {
   cone: boolean;
   officialTrack: boolean;
   guidance: boolean;
   warnings: boolean;
-  radar: boolean;
-  buoys: boolean;
+  satellite: boolean;
 }
 
 interface TropicalMapProps {
   system: TropicalSystem;
   alerts: WeatherAlert[];
-  buoys: BuoyReading[];
   layers: TropicalLayerState;
 }
 
@@ -92,17 +90,13 @@ function warningStyle(feature?: Feature<Geometry, GeoJsonProperties>): PathOptio
   return { color, fillColor: color, fillOpacity: 0.2, opacity: 0.95, weight: 3, dashArray: '8 5' };
 }
 
-export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps) {
+export function TropicalMap({ system, alerts, layers }: TropicalMapProps) {
   const warnings = useMemo(() => createWarningCollection(system, alerts), [alerts, system]);
-  const [radarMode, setRadarMode] = useState<RadarMode>('reflectivity');
-  const radar = useRadarLoop({
-    enabled: layers.radar,
-    mode: radarMode,
-    target: { latitude: system.latitude, longitude: system.longitude },
-  });
+  const satellite = useSatelliteLoop({ enabled: layers.satellite });
+  const forecastPoints = system.products.forecast.filter((point) => point.tauHours > 0);
   const officialPositions: LatLngExpression[] = [
     [system.latitude, system.longitude],
-    ...system.products.forecast.filter((point) => point.tauHours > 0).map(pointPosition),
+    ...forecastPoints.map(pointPosition),
   ];
 
   return (
@@ -119,33 +113,8 @@ export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps)
         worldCopyJump
       >
         <TropicalMapController system={system} />
-        <BaseMapLayers
-          radar={{
-            enabled: layers.radar && radar.hasCoverage,
-            serviceUrl: radar.serviceUrl,
-            layerName: radar.layerName,
-            frameTime: radar.frameTime,
-            mode: radarMode,
-          }}
-        />
-
-        {layers.radar && radarMode === 'velocity' && radar.nearestSite && (
-          <>
-            <Circle
-              center={[radar.nearestSite.latitude, radar.nearestSite.longitude]}
-              radius={radarRangeKm * 1_000}
-              pathOptions={{ color: '#6c4ccf', fillColor: '#6c4ccf', fillOpacity: 0.045, opacity: 0.5, weight: 1, dashArray: '6 6' }}
-              interactive={false}
-            />
-            <CircleMarker
-              center={[radar.nearestSite.latitude, radar.nearestSite.longitude]}
-              radius={5}
-              pathOptions={{ color: '#ffffff', fillColor: '#6c4ccf', fillOpacity: 1, weight: 2 }}
-            >
-              <Tooltip>{radar.nearestSite.id} · {radar.nearestSite.name} Doppler radar</Tooltip>
-            </CircleMarker>
-          </>
-        )}
+        <BaseMapLayers />
+        {layers.satellite && <SmoothSatelliteLayer frameTime={satellite.frameTime} />}
 
         {layers.cone && system.products.cone && (
           <GeoJSON
@@ -182,36 +151,36 @@ export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps)
           <Polyline positions={officialPositions} pathOptions={{ color: '#172f40', weight: 4, opacity: 0.96 }} />
         )}
 
-        {layers.officialTrack && system.products.forecast.map((point) => (
-          <CircleMarker
+        {layers.officialTrack && forecastPoints.map((point) => (
+          <Marker
             key={`${system.id}-forecast-${point.tauHours}`}
-            center={pointPosition(point)}
-            radius={point.tauHours === 0 ? 7 : 5}
-            pathOptions={{
-              color: '#ffffff',
-              fillColor: (point.intensityKt ?? 0) >= 64 ? '#c72f42' : '#e17a38',
-              fillOpacity: 1,
-              weight: 2,
-            }}
+            position={pointPosition(point)}
+            icon={forecastPointIcon(point.intensityKt)}
+            alt={`${point.tauHours}-hour forecast: ${forecastIntensityCode(point.intensityKt)}`}
           >
-            <Tooltip direction="top" offset={[0, -5]} permanent={point.tauHours % 24 === 0}>
-              {point.tauHours === 0 ? 'Now' : `${point.tauHours}h`} · {point.intensityKt ?? '—'} kt
+            <Tooltip direction="top" offset={[0, -13]} permanent={point.tauHours % 24 === 0}>
+              {forecastIntensityCode(point.intensityKt)} · +{point.tauHours}h
             </Tooltip>
             <Popup>
-              <strong>{point.tauHours === 0 ? 'Current position' : `${point.tauHours}-hour forecast`}</strong>
+              <strong>{point.tauHours}-hour forecast</strong>
               <br />
               {point.intensityKt === null ? 'Intensity unavailable' : `${stormCategory(point.intensityKt)} · ${point.intensityKt} kt`}
             </Popup>
-          </CircleMarker>
+          </Marker>
         ))}
 
-        <CircleMarker
-          center={[system.latitude, system.longitude]}
-          radius={10}
-          pathOptions={{ color: '#ffffff', fillColor: '#c72f42', fillOpacity: 1, weight: 3 }}
+        <Marker
+          position={[system.latitude, system.longitude]}
+          icon={stormMapIcon(system.intensityKt, true)}
+          alt={`${stormCategory(system.intensityKt)} ${system.name}`}
         >
-          <Tooltip direction="top" offset={[0, -9]} permanent>{system.name}</Tooltip>
-        </CircleMarker>
+          <Tooltip direction="top" offset={[0, -18]} permanent>{system.name}</Tooltip>
+          <Popup>
+            <strong>{system.classification} {system.name}</strong>
+            <br />
+            {stormCategory(system.intensityKt)} · {system.intensityKt} kt
+          </Popup>
+        </Marker>
 
         {islands.map((island) => (
           <CircleMarker
@@ -223,22 +192,21 @@ export function TropicalMap({ system, alerts, buoys, layers }: TropicalMapProps)
             <Tooltip direction="top" offset={[0, -4]}>{island.name}</Tooltip>
           </CircleMarker>
         ))}
-
-        {layers.buoys && <BuoyMarkers buoys={buoys} />}
       </MapContainer>
 
-      {layers.radar && (
-        <RadarPlayback
-          mode={radarMode}
-          radar={radar}
-          onModeChange={setRadarMode}
-          stormName={system.name}
+      {layers.satellite && (
+        <LoopPlayback
+          kind="satellite"
+          title={`${system.name} satellite`}
+          sourceLabel="GOES East + West"
+          loop={satellite}
         />
       )}
       <div className="tropical-map-key">
         <span><i className="key-line key-line--official" /> Official forecast</span>
         {layers.cone && <span><i className="key-box key-box--cone" /> Forecast cone</span>}
         {layers.warnings && <span><i className="key-box key-box--warning" /> Watches / warnings</span>}
+        <span className="forecast-intensity-key"><b>D</b> Depression <b>S</b> Storm <b>H</b> Hurricane <b>M</b> Major</span>
       </div>
     </div>
   );

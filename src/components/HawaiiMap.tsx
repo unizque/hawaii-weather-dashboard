@@ -1,21 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet';
-import { CircleMarker, GeoJSON, MapContainer, Popup, Tooltip, useMap } from 'react-leaflet';
-import { CloudRain, Layers3, LocateFixed, RadioTower } from 'lucide-react';
+import { CircleMarker, GeoJSON, MapContainer, Marker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { CloudRain, Layers3, LocateFixed } from 'lucide-react';
 import { islands } from '../data/islands';
 import { useRadarLoop } from '../hooks/useRadarLoop';
 import { degreesToCompass, stormCategory } from '../lib/weather';
 import type {
-  BuoyReading,
   IslandDefinition,
   IslandId,
   TropicalSystem,
   WeatherAlert,
 } from '../types/weather';
 import { BaseMapLayers } from './map/BaseMapLayers';
-import { BuoyMarkers } from './map/BuoyMarkers';
-import { RadarPlayback } from './map/RadarPlayback';
+import { LoopPlayback } from './map/LoopPlayback';
+import { stormMapIcon } from './map/stormIcons';
+import { StormSymbol } from './StormSymbol';
 
 export type MapMode = 'islands' | 'pacific';
 
@@ -24,7 +24,6 @@ interface HawaiiMapProps {
   selectedSystemId: string | null;
   alerts: WeatherAlert[];
   systems: TropicalSystem[];
-  buoys: BuoyReading[];
   mode: MapMode;
   onModeChange: (mode: MapMode) => void;
   onSelectIsland: (id: IslandId) => void;
@@ -83,7 +82,6 @@ export function HawaiiMap({
   selectedSystemId,
   alerts,
   systems,
-  buoys,
   mode,
   onModeChange,
   onSelectIsland,
@@ -91,9 +89,8 @@ export function HawaiiMap({
 }: HawaiiMapProps) {
   const alertCollection = useMemo(() => createAlertCollection(alerts), [alerts]);
   const [radarEnabled, setRadarEnabled] = useState(false);
-  const [buoysEnabled, setBuoysEnabled] = useState(true);
   const [alertsEnabled, setAlertsEnabled] = useState(true);
-  const radar = useRadarLoop({ enabled: radarEnabled, mode: 'reflectivity' });
+  const radar = useRadarLoop({ enabled: radarEnabled });
 
   return (
     <section className="panel map-panel" aria-label="Interactive Central Pacific map">
@@ -114,9 +111,6 @@ export function HawaiiMap({
           <div className="map-layer-pills" aria-label="Map layers">
             <button type="button" aria-pressed={radarEnabled} onClick={() => setRadarEnabled((value) => !value)}>
               <CloudRain size={14} /> Radar loop
-            </button>
-            <button type="button" aria-pressed={buoysEnabled} onClick={() => setBuoysEnabled((value) => !value)}>
-              <RadioTower size={14} /> Buoys
             </button>
             <button type="button" aria-pressed={alertsEnabled} onClick={() => setAlertsEnabled((value) => !value)}>
               Alerts
@@ -149,7 +143,6 @@ export function HawaiiMap({
               serviceUrl: radar.serviceUrl,
               layerName: radar.layerName,
               frameTime: radar.frameTime,
-              mode: 'reflectivity',
             }}
           />
 
@@ -190,22 +183,15 @@ export function HawaiiMap({
             );
           })}
 
-          {buoysEnabled && <BuoyMarkers buoys={buoys} />}
-
           {systems.map((system) => {
             const selected = system.id === selectedSystemId;
             const center: LatLngExpression = [system.latitude, system.longitude];
             return (
-              <CircleMarker
+              <Marker
                 key={system.id}
-                center={center}
-                radius={selected ? 11 : 8}
-                pathOptions={{
-                  color: '#ffffff',
-                  fillColor: system.intensityKt >= 64 ? '#c72f42' : '#e17a38',
-                  fillOpacity: 0.96,
-                  weight: selected ? 4 : 2,
-                }}
+                position={center}
+                icon={stormMapIcon(system.intensityKt, selected)}
+                alt={`${stormCategory(system.intensityKt)} ${system.name}`}
                 eventHandlers={{ click: () => onSelectSystem(system) }}
               >
                 <Tooltip direction="top" offset={[0, -10]} permanent={selected}>
@@ -220,16 +206,22 @@ export function HawaiiMap({
                   <br />
                   Select the storm to open the full tracker.
                 </Popup>
-              </CircleMarker>
+              </Marker>
             );
           })}
         </MapContainer>
 
-        {radarEnabled && <RadarPlayback mode="reflectivity" radar={radar} />}
+        {radarEnabled && (
+          <LoopPlayback
+            kind="radar"
+            title="Hawaiʻi rain radar"
+            sourceLabel="NWS mosaic"
+            loop={radar}
+          />
+        )}
         <div className="map-legend" aria-label="Map legend">
           <span><i className="legend-dot legend-dot--island" /> Island</span>
-          <span><i className="legend-dot legend-dot--buoy" /> NOAA buoy</span>
-          <span><i className="legend-dot legend-dot--storm" /> Tropical system</span>
+          <span className="legend-storm"><StormSymbol size={13} /> Tropical system</span>
         </div>
       </div>
     </section>

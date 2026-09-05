@@ -3,25 +3,24 @@ import {
   ArrowLeft,
   ArrowUpRight,
   BookOpen,
-  CloudRain,
   Eye,
   Info,
   Layers3,
-  RadioTower,
   Route,
+  Satellite,
   ShieldAlert,
   Wind,
 } from 'lucide-react';
-import { guidanceKindLabels, knotsToMph, modelColors } from '../lib/tropical';
+import { forecastIntensityCode, guidanceKindLabels, knotsToMph, modelColors } from '../lib/tropical';
 import { degreesToCompass, formatHstTime, stormCategory } from '../lib/weather';
-import type { BuoyReading, TropicalSystem, WeatherAlert } from '../types/weather';
+import type { TropicalSystem, WeatherAlert } from '../types/weather';
+import { StormSymbol } from './StormSymbol';
 import { TropicalMap, type TropicalLayerState } from './TropicalMap';
 
 interface TropicalWorkspaceProps {
   systems: TropicalSystem[];
   selectedSystemId: string | null;
   alerts: WeatherAlert[];
-  buoys: BuoyReading[];
   onSelectSystem: (system: TropicalSystem) => void;
   onBack: () => void;
 }
@@ -31,8 +30,7 @@ const initialLayers: TropicalLayerState = {
   officialTrack: true,
   guidance: false,
   warnings: true,
-  radar: false,
-  buoys: true,
+  satellite: false,
 };
 
 function advisoryTime(value: string): string {
@@ -49,7 +47,6 @@ export function TropicalWorkspace({
   systems,
   selectedSystemId,
   alerts,
-  buoys,
   onSelectSystem,
   onBack,
 }: TropicalWorkspaceProps) {
@@ -114,7 +111,7 @@ export function TropicalWorkspace({
           <button className="text-button" type="button" onClick={onBack}><ArrowLeft size={16} /> Island overview</button>
           <span className="overline">Tropical weather center</span>
           <h2>Pacific storm tracker</h2>
-          <p>Official NHC/CPHC forecast products, warnings, and selected model guidance in one focused view.</p>
+          <p>Official NHC/CPHC forecasts and warnings paired with NOAA GOES satellite imagery for the open Pacific.</p>
         </div>
         <a className="secondary-link" href="https://www.nhc.noaa.gov/?epac" target="_blank" rel="noreferrer">
           National Hurricane Center <ArrowUpRight size={15} />
@@ -129,7 +126,7 @@ export function TropicalWorkspace({
             className={candidate.id === system.id ? 'is-active' : ''}
             onClick={() => onSelectSystem(candidate)}
           >
-            <span className={candidate.intensityKt >= 96 ? 'storm-symbol is-major' : 'storm-symbol'}>◉</span>
+            <span className="storm-symbol"><StormSymbol size={28} intensityKt={candidate.intensityKt} /></span>
             <span><small>{stormCategory(candidate.intensityKt)}</small><strong>{candidate.name}</strong></span>
             <b>{candidate.intensityKt} kt</b>
           </button>
@@ -138,7 +135,7 @@ export function TropicalWorkspace({
 
       <section className="storm-summary-card">
         <div className="storm-summary-card__identity">
-          <span className={system.intensityKt >= 96 ? 'storm-orb is-major' : 'storm-orb'} aria-hidden="true">◉</span>
+          <span className="storm-orb" aria-hidden="true"><StormSymbol size={35} intensityKt={system.intensityKt} /></span>
           <div>
             <span className="overline">Advisory {system.advisoryNumber ?? 'current'}</span>
             <h3>{system.classification} {system.name}</h3>
@@ -172,15 +169,12 @@ export function TropicalWorkspace({
             <button type="button" aria-pressed={layers.warnings} onClick={() => toggleLayer('warnings')}>
               <ShieldAlert size={14} /> Warnings
             </button>
-            <button type="button" aria-pressed={layers.radar} onClick={() => toggleLayer('radar')}>
-              <CloudRain size={14} /> Radar loop
-            </button>
-            <button type="button" aria-pressed={layers.buoys} onClick={() => toggleLayer('buoys')}>
-              <RadioTower size={14} /> Buoys
+            <button type="button" aria-pressed={layers.satellite} onClick={() => toggleLayer('satellite')}>
+              <Satellite size={14} /> Satellite loop
             </button>
           </div>
         </div>
-        <TropicalMap system={system} alerts={alerts} buoys={buoys} layers={layers} />
+        <TropicalMap system={system} alerts={alerts} layers={layers} />
         <div className="cone-explainer">
           <Info size={17} />
           <p><strong>How to read the cone:</strong> it represents the probable path of the storm’s center. Hazardous wind, rain, surf, and flooding can occur well outside it.</p>
@@ -194,7 +188,9 @@ export function TropicalWorkspace({
             <div className="forecast-timeline">
               {system.products.forecast.map((point) => (
                 <article key={`${point.validAt}-${point.tauHours}`}>
-                  <span className="timeline-dot" />
+                  <span className="timeline-intensity" data-intensity={forecastIntensityCode(point.intensityKt)}>
+                    {forecastIntensityCode(point.intensityKt)}
+                  </span>
                   <time>{point.tauHours === 0 ? 'Current' : `+${point.tauHours} hours`}<small>{advisoryTime(point.validAt)}</small></time>
                   <div><strong>{point.intensityKt ?? '—'} kt</strong><span>{point.intensityKt === null ? 'Intensity unavailable' : stormCategory(point.intensityKt)}</span></div>
                   <p>{point.latitude.toFixed(1)}°N · {Math.abs(point.longitude).toFixed(1)}°W</p>

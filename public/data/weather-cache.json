@@ -61,20 +61,5 @@
       "coneUrl": "https://www.nhc.noaa.gov/storm_graphics/api/EP112026_034adv_CONE.kmz",
       "products": { "cone": null, "warnings": null, "forecast": [], "guidance": [] }
     }
-  ],
-  "buoys": [
-    {
-      "stationId": "51001",
-      "name": "Northwest Hawaiʻi",
-      "latitude": 23.445,
-      "longitude": -162.279,
-      "observedAt": "2026-09-04T21:50:00.000Z",
-      "windSpeedKt": 15.6,
-      "gustKt": 19.4,
-      "waveHeightFt": null,
-      "dominantPeriodSeconds": null,
-      "pressureMb": 1014.7,
-      "waterTemperatureF": 80.1
-    }
   ]
 }

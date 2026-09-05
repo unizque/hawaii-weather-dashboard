@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { defaultIsland, islands } from '../data/islands';
 import { createPreviewConditions, createPreviewForecast } from '../data/preview';
-import { fetchCachedBuoys } from '../services/buoys';
 import { clearWeatherCache } from '../services/cache';
 import { fetchPacificSystems } from '../services/nhc';
 import { fetchHawaiiAlerts, fetchIslandWeather } from '../services/nws';
 import type {
-  BuoyReading,
   CurrentConditions,
   FeedResult,
   ForecastPeriod,
@@ -46,12 +44,6 @@ export function useDashboardData() {
     status: 'loading',
     updatedAt: null,
   });
-  const [buoys, setBuoys] = useState<FeedResult<BuoyReading[]>>({
-    data: [],
-    status: 'loading',
-    updatedAt: null,
-  });
-
   useEffect(() => {
     const controller = new AbortController();
     setConditions((current) => loading(current));
@@ -86,7 +78,6 @@ export function useDashboardData() {
     const controller = new AbortController();
     setAlerts((current) => loading(current));
     setStorms((current) => loading(current));
-    setBuoys((current) => loading(current));
 
     void Promise.all([
       fetchHawaiiAlerts(controller.signal)
@@ -99,9 +90,8 @@ export function useDashboardData() {
             updatedAt: null,
             error: error instanceof Error ? error.message : 'NWS alerts unavailable',
           });
-        }),
+      }),
       fetchPacificSystems(controller.signal).then(setStorms),
-      fetchCachedBuoys().then(setBuoys),
     ]);
 
     return () => controller.abort();
@@ -120,7 +110,6 @@ export function useDashboardData() {
     forecast,
     alerts,
     storms,
-    buoys,
     refresh,
   };
 }

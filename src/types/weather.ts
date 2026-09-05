@@ -102,20 +102,6 @@ export interface TropicalProducts {
   guidance: ModelGuidanceTrack[];
 }
 
-export interface BuoyReading {
-  stationId: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  observedAt: string;
-  windSpeedKt: number | null;
-  gustKt: number | null;
-  waveHeightFt: number | null;
-  dominantPeriodSeconds: number | null;
-  pressureMb: number | null;
-  waterTemperatureF: number | null;
-}
-
 export interface FeedResult<T> {
   data: T;
   status: FeedStatus;
@@ -126,5 +112,4 @@ export interface FeedResult<T> {
 export interface WeatherCache {
   generatedAt: string | null;
   storms: TropicalSystem[];
-  buoys: BuoyReading[];
 }

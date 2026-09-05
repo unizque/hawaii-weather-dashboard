@@ -20,6 +20,24 @@ export function knotsToMph(knots: number): number {
   return Math.round(knots * 1.150_779);
 }
 
+export type ForecastIntensityCode = 'D' | 'S' | 'H' | 'M' | '?';
+export type StormIntensityTone = 'depression' | 'storm' | 'hurricane' | 'major';
+
+export function forecastIntensityCode(intensityKt: number | null): ForecastIntensityCode {
+  if (intensityKt === null) return '?';
+  if (intensityKt < 34) return 'D';
+  if (intensityKt < 64) return 'S';
+  if (intensityKt < 96) return 'H';
+  return 'M';
+}
+
+export function stormIntensityTone(intensityKt: number): StormIntensityTone {
+  if (intensityKt < 34) return 'depression';
+  if (intensityKt < 64) return 'storm';
+  if (intensityKt < 96) return 'hurricane';
+  return 'major';
+}
+
 export function warningColor(name: string): string {
   const normalized = name.toLowerCase();
   if (normalized.includes('hurricane warning')) return '#cf2148';

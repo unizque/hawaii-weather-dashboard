@@ -15,7 +15,8 @@
 - Keep unit conversion and presentation-independent transformations in `src/lib` with tests.
 - Prefer small, accessible React components and semantic HTML.
 - Keep optional heavy map layers lazy: radar must be off by default, and tropical-only UI should remain code-split.
-- Radar animation must reuse one WMS layer, pause in hidden tabs, respect reduced-motion preferences, and never imply Doppler coverage for a storm outside Hawaiʻi radar range.
+- Radar and satellite animation may keep at most two imagery buffers: retain the displayed frame until the incoming frame is loaded, then crossfade and discard the old frame. Pause in hidden tabs and respect reduced-motion preferences.
+- Keep Hawaiʻi reflectivity on the island overview. Tropical systems over the open Pacific must use NOAA GOES satellite imagery rather than implying coverage from a local Doppler station.
 - Parse and reduce GIS products during the scheduled build rather than in the visitor's browser.
 - Do not add client-side secrets. GitHub Pages is a public static host.
 - Run `npm run check`, `npm run test`, and `npm run build` before proposing changes.

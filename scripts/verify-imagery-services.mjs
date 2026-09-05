@@ -1,0 +1,78 @@
+import assert from 'node:assert/strict';
+import { hawaiiReflectivityService } from '../src/data/radar.ts';
+import { pacificSatelliteService } from '../src/data/satellite.ts';
+import { parseRadarCapabilities } from '../src/lib/radar.ts';
+import { parseSatelliteCatalog, satelliteImageUrl } from '../src/services/satellite.ts';
+
+const githubPagesOrigin = 'https://unizque.github.io';
+
+function assertBrowserAccess(response, label) {
+  const allowedOrigin = response.headers.get('access-control-allow-origin');
+  assert.ok(
+    allowedOrigin === '*' || allowedOrigin === githubPagesOrigin,
+    `${label} does not allow requests from GitHub Pages`,
+  );
+}
+
+function radarCapabilitiesUrl() {
+  const url = new URL(hawaiiReflectivityService.serviceUrl);
+  url.searchParams.set('service', 'WMS');
+  url.searchParams.set('version', '1.3.0');
+  url.searchParams.set('request', 'GetCapabilities');
+  return url;
+}
+
+function satelliteCatalogUrl() {
+  const url = new URL(`${pacificSatelliteService.serviceUrl}/query`);
+  url.searchParams.set('where', '1=1');
+  url.searchParams.set('outFields', 'objectid,start_time,end_time');
+  url.searchParams.set('returnGeometry', 'false');
+  url.searchParams.set('orderByFields', 'end_time DESC');
+  url.searchParams.set('resultRecordCount', '40');
+  url.searchParams.set('f', 'json');
+  return url;
+}
+
+async function verifyRadar() {
+  const response = await fetch(radarCapabilitiesUrl(), {
+    headers: { Origin: githubPagesOrigin },
+    signal: AbortSignal.timeout(15_000),
+  });
+  assert.equal(response.ok, true, `Hawaiʻi radar capabilities returned ${response.status}`);
+  assertBrowserAccess(response, 'Hawaiʻi radar');
+
+  const capabilities = parseRadarCapabilities(await response.text());
+  assert.ok(capabilities.layerName, 'Hawaiʻi radar is missing its reflectivity layer');
+  assert.ok(capabilities.frames.length > 1, 'Hawaiʻi radar does not advertise animated history');
+  console.log(`Hawaiʻi radar: ${capabilities.layerName} · ${capabilities.frames.length} two-hour frames`);
+}
+
+async function verifySatellite() {
+  const catalogResponse = await fetch(satelliteCatalogUrl(), {
+    headers: { Origin: githubPagesOrigin },
+    signal: AbortSignal.timeout(20_000),
+  });
+  assert.equal(catalogResponse.ok, true, `GOES satellite catalog returned ${catalogResponse.status}`);
+  assertBrowserAccess(catalogResponse, 'GOES satellite catalog');
+
+  const payload = await catalogResponse.json();
+  const frames = parseSatelliteCatalog(payload);
+  assert.ok(frames.length > 1, 'GOES satellite catalog does not contain animated history');
+
+  const imageResponse = await fetch(satelliteImageUrl({
+    bbox: '-20037508,-2504688,-14471533,4865942',
+    width: 320,
+    height: 220,
+    frameTime: frames.at(-1),
+  }), {
+    headers: { Origin: githubPagesOrigin },
+    signal: AbortSignal.timeout(25_000),
+  });
+  assert.equal(imageResponse.ok, true, `GOES satellite image returned ${imageResponse.status}`);
+  assertBrowserAccess(imageResponse, 'GOES satellite image');
+  assert.match(imageResponse.headers.get('content-type') ?? '', /^image\//, 'GOES export did not return an image');
+  assert.ok((await imageResponse.arrayBuffer()).byteLength > 1_000, 'GOES export returned an empty image');
+  console.log(`GOES satellite: ${frames.length} two-hour frames · export image available`);
+}
+
+await Promise.all([verifyRadar(), verifySatellite()]);

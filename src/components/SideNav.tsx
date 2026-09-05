@@ -1,6 +1,7 @@
-import { BellRing, LayoutDashboard, Radar, RadioTower, Waves } from 'lucide-react';
+import { LayoutDashboard, RadioTower } from 'lucide-react';
+import { StormSymbol } from './StormSymbol';
 
-export type DashboardView = 'overview' | 'tropical' | 'marine' | 'alerts';
+export type DashboardView = 'overview' | 'tropical';
 
 interface SideNavProps {
   activeView: DashboardView;
@@ -8,11 +9,9 @@ interface SideNavProps {
 }
 
 const items = [
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'tropical', label: 'Hurricanes', icon: Radar },
-  { id: 'marine', label: 'Marine', icon: Waves },
-  { id: 'alerts', label: 'Alerts', icon: BellRing },
-] satisfies Array<{ id: DashboardView; label: string; icon: typeof LayoutDashboard }>;
+  { id: 'overview', label: 'Overview' },
+  { id: 'tropical', label: 'Hurricanes' },
+] satisfies Array<{ id: DashboardView; label: string }>;
 
 export function SideNav({ activeView, onChange }: SideNavProps) {
   return (
@@ -21,7 +20,7 @@ export function SideNav({ activeView, onChange }: SideNavProps) {
         <RadioTower size={22} strokeWidth={1.6} />
       </div>
       <div className="side-nav__items">
-        {items.map(({ id, label, icon: Icon }) => (
+        {items.map(({ id, label }) => (
           <button
             className={`side-nav__item ${activeView === id ? 'is-active' : ''}`}
             type="button"
@@ -29,7 +28,9 @@ export function SideNav({ activeView, onChange }: SideNavProps) {
             onClick={() => onChange(id)}
             aria-current={activeView === id ? 'page' : undefined}
           >
-            <Icon size={20} strokeWidth={1.5} />
+            {id === 'overview'
+              ? <LayoutDashboard size={20} strokeWidth={1.5} />
+              : <StormSymbol size={22} />}
             <span>{label}</span>
           </button>
         ))}

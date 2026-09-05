@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "check": "tsc -b --pretty false",
     "test": "vitest run src && node --test scripts/lib/*.test.mjs",
-    "verify:radar": "node scripts/verify-radar-services.mjs",
+    "verify:imagery": "node scripts/verify-imagery-services.mjs",
     "sync:data": "node scripts/sync-weather-data.mjs",
     "preview": "vite preview"
   },

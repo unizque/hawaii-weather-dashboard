@@ -1,19 +1,17 @@
-import { Activity, BellRing, Clock3, RadioTower, Waves } from 'lucide-react';
+import { Activity, BellRing, Clock3, RadioTower } from 'lucide-react';
 import { formatAge } from '../lib/weather';
 
 interface StatusRibbonProps {
   alertCount: number;
   systemCount: number;
-  buoyCount: number;
   updatedAt: string | null;
 }
 
-export function StatusRibbon({ alertCount, systemCount, buoyCount, updatedAt }: StatusRibbonProps) {
+export function StatusRibbon({ alertCount, systemCount, updatedAt }: StatusRibbonProps) {
   const stats = [
     { label: 'Island stations', value: '5', icon: RadioTower, tone: 'cyan' },
     { label: 'Active alerts', value: String(alertCount).padStart(2, '0'), icon: BellRing, tone: alertCount ? 'amber' : 'mint' },
     { label: 'Pacific systems', value: String(systemCount).padStart(2, '0'), icon: Activity, tone: systemCount ? 'coral' : 'mint' },
-    { label: 'Buoys reporting', value: String(buoyCount).padStart(2, '0'), icon: Waves, tone: 'blue' },
   ];
 
   return (

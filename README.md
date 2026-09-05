@@ -10,9 +10,10 @@ Pacific Signal is a Hawaiʻi-first weather and tropical-cyclone dashboard with a
 - Statewide NWS watches, warnings, and advisories with full in-app details and official product links
 - Dedicated tropical weather center with official forecast cones, forecast points, coastal warnings, and advisory links
 - Selected ATCF model-guidance tracks, clearly separated from the official NHC/CPHC forecast
-- Two-hour NWS Hawaiʻi reflectivity loops plus radial-velocity views from the four island Doppler radars
-- Mapped NDBC buoy observations refreshed during the GitHub Pages build
-- Friendly island and Pacific map extents with independent radar, alert, buoy, cone, and guidance controls
+- Smooth two-hour NWS Hawaiʻi rain-radar loops with incoming frames preloaded before display
+- NOAA GOES East/West GeoColor satellite loops for tropical systems across the open Pacific
+- NHC-style tropical symbols and D/S/H/M intensity markers along the official forecast track
+- Friendly island and Pacific map extents with independent radar, alert, cone, warning, satellite, and guidance controls
 - Responsive layouts for desktop, tablet, and mobile
 - Automated verification and GitHub Pages deployment
 
@@ -22,12 +23,12 @@ Pacific Signal is a Hawaiʻi-first weather and tropical-cyclone dashboard with a
 Browser
   ├─ NWS API (forecast, observations, alerts)
   ├─ NHC CurrentStorms.json (live when CORS permits)
-  ├─ NWS Hawaiʻi radar WMS (loaded only when selected)
+  ├─ NWS Hawaiʻi radar WMS (island map; loaded only when selected)
+  ├─ NOAA NESDIS GOES ImageServer (tropical map; loaded only when selected)
   └─ Bundled weather cache
        └─ GitHub Actions sync
             ├─ NHC cone / warning KMZ products
-            ├─ NHC ATCF public model guidance
-            └─ NDBC buoy observations
+            └─ NHC ATCF public model guidance
 ```
 
 GitHub Pages is a static host, so the application never embeds API secrets. Network access is isolated in typed modules under `src/services`; pure conversions and weather-domain logic live under `src/lib` with unit tests. The scheduled Pages build converts official NHC GIS products to lightweight GeoJSON and refreshes public NOAA products without committing generated data back into the repository.
@@ -51,7 +52,7 @@ npm run test
 npm run build
 ```
 
-To refresh the bundled NHC and NDBC cache:
+To refresh the bundled NHC cache:
 
 ```bash
 npm run sync:data
@@ -67,7 +68,8 @@ The sync script retains the previous cache when an upstream product is temporari
 - [NHC GIS products](https://www.nhc.noaa.gov/gis/)
 - [NHC ATCF data](https://ftp.nhc.noaa.gov/atcf/README)
 - [NWS RIDGE2 radar services](https://www.weather.gov/radarfaq/)
-- [National Data Buoy Center](https://www.ndbc.noaa.gov/)
+- [NOAA NESDIS satellite maps](https://satellitemaps.nesdis.noaa.gov/arcgis/rest/services)
+- [GOES-West imagery](https://www.star.nesdis.noaa.gov/GOES/conus.php?sat=G18)
 - [OpenStreetMap](https://www.openstreetmap.org/copyright) map tiles and contributors
 
 All displayed timestamps are converted to Hawaiʻi Standard Time where appropriate. The interface shows useful update times and only raises a data notice when observations are delayed.
@@ -75,8 +77,9 @@ All displayed timestamps are converted to Hawaiʻi Standard Time where appropria
 ## Performance approach
 
 - Radar imagery is off by default and requested only when a visitor enables it.
-- Radar history uses one WMS layer at a time and advances through at most 13 frames rather than stacking image layers.
-- Doppler velocity is only offered within the nearest Hawaiʻi radar's approximate operational range; distant storms link to official NOAA satellite imagery.
+- Radar and satellite history are sampled to at most 13 frames over two hours.
+- Animation keeps the displayed frame in place while the next frame loads, then crossfades between two buffers to prevent blank flashes.
+- Hawaiʻi reflectivity stays on the island map; open-ocean tropical tracking uses the merged NOAA GOES East/West satellite service instead of implying local Doppler coverage.
 - The tropical workspace is code-split from the island overview.
 - Map vectors use Leaflet's canvas renderer and model guidance is capped to selected tracks and five forecast days.
 - Tile buffers and animations are intentionally conservative for mobile hardware.

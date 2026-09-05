@@ -1,6 +1,7 @@
 import { ArrowUpRight, Radio } from 'lucide-react';
 import { degreesToCompass, stormCategory } from '../lib/weather';
 import type { FeedStatus, TropicalSystem } from '../types/weather';
+import { StormSymbol } from './StormSymbol';
 
 interface TropicalListProps {
   systems: TropicalSystem[];
@@ -35,7 +36,7 @@ export function TropicalList({ systems, status, selectedSystemId, onSelect }: Tr
               onClick={() => onSelect(system)}
             >
               <span className="storm-row__symbol" aria-hidden="true">
-                {system.intensityKt >= 64 ? '◉' : '○'}
+                <StormSymbol size={27} intensityKt={system.intensityKt} />
               </span>
               <span className="storm-row__name">
                 <small>{stormCategory(system.intensityKt)}</small>

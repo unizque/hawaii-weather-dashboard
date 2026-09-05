@@ -71,7 +71,7 @@ function normalizeStorms(response: NhcStormResponse): TropicalSystem[] {
 }
 
 export async function fetchPacificSystems(signal?: AbortSignal): Promise<FeedResult<TropicalSystem[]>> {
-  let cache: WeatherCache = { generatedAt: null, storms: [], buoys: [] };
+  let cache: WeatherCache = { generatedAt: null, storms: [] };
   try {
     cache = await getWeatherCache();
   } catch {

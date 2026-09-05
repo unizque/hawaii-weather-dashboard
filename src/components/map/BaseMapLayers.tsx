@@ -1,24 +1,14 @@
-import { TileLayer, WMSTileLayer } from 'react-leaflet';
-import type { WMSParams } from 'leaflet';
-import type { RadarMode } from '../../data/radar';
+import { TileLayer } from 'react-leaflet';
+import { SmoothWmsLayer } from './SmoothWmsLayer';
 
 export interface RadarLayerOptions {
   enabled: boolean;
   serviceUrl: string;
   layerName: string | null;
   frameTime: string | null;
-  mode: RadarMode;
 }
 
-export function BaseMapLayers({ radar }: { radar: RadarLayerOptions }) {
-  const radarParams: (WMSParams & { time?: string }) | null = radar.layerName ? {
-    layers: radar.layerName,
-    format: 'image/png',
-    transparent: true,
-    version: '1.1.1',
-    ...(radar.frameTime ? { time: radar.frameTime } : {}),
-  } : null;
-
+export function BaseMapLayers({ radar }: { radar?: RadarLayerOptions }) {
   return (
     <>
       <TileLayer
@@ -27,16 +17,11 @@ export function BaseMapLayers({ radar }: { radar: RadarLayerOptions }) {
         updateWhenIdle
         keepBuffer={1}
       />
-      {radar.enabled && radar.layerName && radarParams && (
-        <WMSTileLayer
-          key={`${radar.serviceUrl}-${radar.layerName}`}
-          attribution="Radar: NOAA / National Weather Service"
-          url={radar.serviceUrl}
-          params={radarParams}
-          opacity={radar.mode === 'velocity' ? 0.76 : 0.68}
-          zIndex={280}
-          updateWhenIdle
-          keepBuffer={1}
+      {radar?.enabled && radar.layerName && (
+        <SmoothWmsLayer
+          serviceUrl={radar.serviceUrl}
+          layerName={radar.layerName}
+          frameTime={radar.frameTime}
         />
       )}
     </>
