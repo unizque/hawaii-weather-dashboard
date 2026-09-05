@@ -9,7 +9,7 @@ interface SideNavProps {
 
 const items = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'tropical', label: 'Tropical', icon: Radar },
+  { id: 'tropical', label: 'Hurricanes', icon: Radar },
   { id: 'marine', label: 'Marine', icon: Waves },
   { id: 'alerts', label: 'Alerts', icon: BellRing },
 ] satisfies Array<{ id: DashboardView; label: string; icon: typeof LayoutDashboard }>;
@@ -34,7 +34,7 @@ export function SideNav({ activeView, onChange }: SideNavProps) {
           </button>
         ))}
       </div>
-      <div className="side-nav__version">PS·01</div>
+      <div className="side-nav__version">Hawaiʻi</div>
     </nav>
   );
 }

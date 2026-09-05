@@ -14,8 +14,12 @@
       "advisoryNumber": "035",
       "updatedAt": "2026-09-04T21:00:00.000Z",
       "advisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCPCP4.shtml",
+      "forecastAdvisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCMCP4.shtml",
       "discussionUrl": "https://www.nhc.noaa.gov/text/HFOTCDCP4.shtml",
-      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp4.shtml"
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp4.shtml",
+      "windProbabilitiesUrl": "https://www.nhc.noaa.gov/text/HFOPWSCP4.shtml",
+      "coneUrl": "https://www.nhc.noaa.gov/storm_graphics/api/EP122026_035adv_CONE.kmz",
+      "products": { "cone": null, "warnings": null, "forecast": [], "guidance": [] }
     },
     {
       "id": "ep132026",
@@ -30,8 +34,12 @@
       "advisoryNumber": "015",
       "updatedAt": "2026-09-04T21:00:00.000Z",
       "advisoryUrl": "https://www.nhc.noaa.gov/text/MIATCPEP3.shtml",
+      "forecastAdvisoryUrl": "https://www.nhc.noaa.gov/text/MIATCMEP3.shtml",
       "discussionUrl": "https://www.nhc.noaa.gov/text/MIATCDEP3.shtml",
-      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_ep3.shtml"
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_ep3.shtml",
+      "windProbabilitiesUrl": "https://www.nhc.noaa.gov/text/MIAPWSEP3.shtml",
+      "coneUrl": "https://www.nhc.noaa.gov/storm_graphics/api/EP132026_015adv_CONE.kmz",
+      "products": { "cone": null, "warnings": null, "forecast": [], "guidance": [] }
     },
     {
       "id": "ep112026",
@@ -46,8 +54,12 @@
       "advisoryNumber": "034",
       "updatedAt": "2026-09-04T21:00:00.000Z",
       "advisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCPCP5.shtml",
+      "forecastAdvisoryUrl": "https://www.nhc.noaa.gov/text/HFOTCMCP5.shtml",
       "discussionUrl": "https://www.nhc.noaa.gov/text/HFOTCDCP5.shtml",
-      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp5.shtml"
+      "graphicsUrl": "https://www.nhc.noaa.gov/graphics_cp5.shtml",
+      "windProbabilitiesUrl": "https://www.nhc.noaa.gov/text/HFOPWSCP5.shtml",
+      "coneUrl": "https://www.nhc.noaa.gov/storm_graphics/api/EP112026_034adv_CONE.kmz",
+      "products": { "cone": null, "warnings": null, "forecast": [], "guidance": [] }
     }
   ],
   "buoys": [

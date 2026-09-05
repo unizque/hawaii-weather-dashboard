@@ -1,6 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
+import { strFromU8, unzipSync } from 'fflate';
+import { parseAtcfGuidance } from './lib/atcf.mjs';
+import { parseKmlFeatures } from './lib/kml.mjs';
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cachePath = resolve(projectRoot, 'public/data/weather-cache.json');
@@ -33,7 +37,9 @@ async function fetchWithTimeout(url, responseType = 'json') {
     signal: AbortSignal.timeout(15_000),
   });
   if (!response.ok) throw new Error(`${url} returned ${response.status}`);
-  return responseType === 'text' ? response.text() : response.json();
+  if (responseType === 'text') return response.text();
+  if (responseType === 'bytes') return new Uint8Array(await response.arrayBuffer());
+  return response.json();
 }
 
 function titleCase(value) {
@@ -60,10 +66,71 @@ function normalizeStorms(payload) {
       advisoryNumber: storm.publicAdvisory?.advNum ?? null,
       updatedAt: storm.lastUpdate,
       advisoryUrl: storm.publicAdvisory?.url ?? null,
+      forecastAdvisoryUrl: storm.forecastAdvisory?.url ?? null,
       discussionUrl: storm.forecastDiscussion?.url ?? null,
       graphicsUrl: storm.forecastGraphics?.url ?? null,
+      windProbabilitiesUrl: storm.windSpeedProbabilities?.url ?? null,
+      coneUrl: storm.trackCone?.kmzFile ?? null,
+      products: {
+        cone: null,
+        warnings: null,
+        forecast: [],
+        guidance: [],
+      },
     }))
     .sort((a, b) => b.intensityKt - a.intensityKt);
+}
+
+async function fetchKmzFeatures(url, geometryTypes) {
+  const bytes = await fetchWithTimeout(url, 'bytes');
+  const archive = unzipSync(bytes);
+  const filename = Object.keys(archive).find((name) => name.toLowerCase().endsWith('.kml'));
+  if (!filename) throw new Error(`${url} contained no KML document`);
+  return parseKmlFeatures(strFromU8(archive[filename]), geometryTypes);
+}
+
+async function fetchAtcfProducts(stormId) {
+  const bytes = await fetchWithTimeout(
+    `https://ftp.nhc.noaa.gov/atcf/aid_public/a${stormId.toLowerCase()}.dat.gz`,
+    'bytes',
+  );
+  return parseAtcfGuidance(gunzipSync(bytes).toString('utf8'));
+}
+
+async function enrichStorm(storm, source, existingStorm) {
+  const [guidanceResult, coneResult, warningsResult] = await Promise.allSettled([
+    fetchAtcfProducts(storm.id),
+    source.trackCone?.kmzFile
+      ? fetchKmzFeatures(source.trackCone.kmzFile, ['Polygon'])
+      : Promise.resolve(null),
+    source.windWatchesWarnings?.kmzFile
+      ? fetchKmzFeatures(source.windWatchesWarnings.kmzFile, ['Polygon', 'LineString'])
+      : Promise.resolve(null),
+  ]);
+
+  const previous = existingStorm?.products ?? {
+    cone: null,
+    warnings: null,
+    forecast: [],
+    guidance: [],
+  };
+  const guidance = guidanceResult.status === 'fulfilled' ? guidanceResult.value : null;
+  const cone = coneResult.status === 'fulfilled' && coneResult.value?.features.length
+    ? coneResult.value
+    : previous.cone;
+  const warnings = warningsResult.status === 'fulfilled' && warningsResult.value?.features.length
+    ? warningsResult.value
+    : previous.warnings;
+
+  return {
+    ...storm,
+    products: {
+      cone,
+      warnings,
+      forecast: guidance?.forecast.length ? guidance.forecast : previous.forecast,
+      guidance: guidance?.guidance.length ? guidance.guidance : previous.guidance,
+    },
+  };
 }
 
 function measurement(value, multiplier = 1) {
@@ -118,7 +185,15 @@ async function sync() {
     }),
   ]);
 
-  const storms = stormResult.status === 'fulfilled' ? normalizeStorms(stormResult.value) : existing.storms;
+  let storms = existing.storms;
+  if (stormResult.status === 'fulfilled') {
+    const normalized = normalizeStorms(stormResult.value);
+    storms = await Promise.all(normalized.map((storm) => {
+      const source = (stormResult.value.activeStorms ?? []).find((candidate) => candidate.id === storm.id) ?? {};
+      const existingStorm = existing.storms.find((candidate) => candidate.id === storm.id);
+      return enrichStorm(storm, source, existingStorm);
+    }));
+  }
   const buoys = buoyResults.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
   const successfulSources = [stormResult, ...buoyResults].filter((result) => result.status === 'fulfilled').length;
   const cache = {

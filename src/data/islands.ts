@@ -8,7 +8,7 @@ export const islands: IslandDefinition[] = [
     stationLabel: 'Northwestern district',
     latitude: 21.9742,
     longitude: -159.367,
-    accent: '#79e0bf',
+    accent: '#4f8f78',
   },
   {
     id: 'oahu',
@@ -17,7 +17,7 @@ export const islands: IslandDefinition[] = [
     stationLabel: 'Southern shoreline',
     latitude: 21.3069,
     longitude: -157.8583,
-    accent: '#53d7e8',
+    accent: '#277fa5',
   },
   {
     id: 'molokai',
@@ -26,7 +26,7 @@ export const islands: IslandDefinition[] = [
     stationLabel: 'Central district',
     latitude: 21.09,
     longitude: -157.022,
-    accent: '#c5e36b',
+    accent: '#7c9d55',
   },
   {
     id: 'maui',
@@ -35,7 +35,7 @@ export const islands: IslandDefinition[] = [
     stationLabel: 'Central valley',
     latitude: 20.8893,
     longitude: -156.4729,
-    accent: '#f4bd4a',
+    accent: '#d69c39',
   },
   {
     id: 'hawaii',
@@ -44,7 +44,7 @@ export const islands: IslandDefinition[] = [
     stationLabel: 'Windward coast',
     latitude: 19.7241,
     longitude: -155.0868,
-    accent: '#ff7f67',
+    accent: '#d9634e',
   },
 ];
 

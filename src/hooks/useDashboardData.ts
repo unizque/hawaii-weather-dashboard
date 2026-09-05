@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { defaultIsland, islands } from '../data/islands';
 import { createPreviewConditions, createPreviewForecast } from '../data/preview';
 import { fetchCachedBuoys } from '../services/buoys';
+import { clearWeatherCache } from '../services/cache';
 import { fetchPacificSystems } from '../services/nhc';
 import { fetchHawaiiAlerts, fetchIslandWeather } from '../services/nws';
 import type {
@@ -106,7 +107,10 @@ export function useDashboardData() {
     return () => controller.abort();
   }, [refreshToken]);
 
-  const refresh = useCallback(() => setRefreshToken((value) => value + 1), []);
+  const refresh = useCallback(() => {
+    clearWeatherCache();
+    setRefreshToken((value) => value + 1);
+  }, []);
 
   return {
     selectedIsland,

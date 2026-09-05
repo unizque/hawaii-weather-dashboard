@@ -1,20 +1,19 @@
-import { Fragment, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import type { LatLngBoundsExpression, LatLngExpression } from 'leaflet';
-import {
-  CircleMarker,
-  GeoJSON,
-  MapContainer,
-  Polyline,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from 'react-leaflet';
-import { Crosshair, Layers3, LocateFixed } from 'lucide-react';
+import { CircleMarker, GeoJSON, MapContainer, Popup, Tooltip, useMap } from 'react-leaflet';
+import { CloudRain, Layers3, LocateFixed, RadioTower } from 'lucide-react';
 import { islands } from '../data/islands';
 import { degreesToCompass, stormCategory } from '../lib/weather';
-import type { IslandDefinition, IslandId, TropicalSystem, WeatherAlert } from '../types/weather';
+import type {
+  BuoyReading,
+  IslandDefinition,
+  IslandId,
+  TropicalSystem,
+  WeatherAlert,
+} from '../types/weather';
+import { BaseMapLayers } from './map/BaseMapLayers';
+import { BuoyMarkers } from './map/BuoyMarkers';
 
 export type MapMode = 'islands' | 'pacific';
 
@@ -23,18 +22,11 @@ interface HawaiiMapProps {
   selectedSystemId: string | null;
   alerts: WeatherAlert[];
   systems: TropicalSystem[];
+  buoys: BuoyReading[];
   mode: MapMode;
   onModeChange: (mode: MapMode) => void;
   onSelectIsland: (id: IslandId) => void;
   onSelectSystem: (system: TropicalSystem) => void;
-}
-
-function projectedPosition(system: TropicalSystem): LatLngExpression {
-  const travelNm = system.movementSpeedKt * 12;
-  const angle = (system.movementDirectionDegrees * Math.PI) / 180;
-  const latitude = system.latitude + (Math.cos(angle) * travelNm) / 60;
-  const longitude = system.longitude + (Math.sin(angle) * travelNm) / (60 * Math.cos((system.latitude * Math.PI) / 180));
-  return [latitude, longitude];
 }
 
 function MapController({
@@ -49,7 +41,7 @@ function MapController({
     if (mode === 'islands') {
       map.flyTo([selectedIsland.latitude, selectedIsland.longitude], selectedIsland.id === 'oahu' ? 8 : 7, {
         animate: true,
-        duration: 0.8,
+        duration: 0.55,
       });
       return;
     }
@@ -60,11 +52,11 @@ function MapController({
         [Math.min(selectedSystem.latitude, 18.5) - 3, Math.min(selectedSystem.longitude, -161) - 4],
         [Math.max(selectedSystem.latitude, 22.5) + 3, Math.max(selectedSystem.longitude, -154) + 4],
       ];
-      map.flyToBounds(bounds, { padding: [28, 28], duration: 0.9 });
+      map.flyToBounds(bounds, { padding: [24, 24], duration: 0.65 });
       return;
     }
 
-    map.flyTo([19, -154], 4, { animate: true, duration: 0.8 });
+    map.flyTo([19, -154], 4, { animate: true, duration: 0.55 });
   }, [map, mode, selectedIsland, selectedSystemId, systems]);
 
   return null;
@@ -79,10 +71,7 @@ function createAlertCollection(alerts: WeatherAlert[]): FeatureCollection<Geomet
         type: 'Feature',
         id: alert.id,
         geometry: alert.geometry!,
-        properties: {
-          event: alert.event,
-          severity: alert.severity,
-        },
+        properties: { event: alert.event, severity: alert.severity },
       })),
   };
 }
@@ -92,27 +81,44 @@ export function HawaiiMap({
   selectedSystemId,
   alerts,
   systems,
+  buoys,
   mode,
   onModeChange,
   onSelectIsland,
   onSelectSystem,
 }: HawaiiMapProps) {
   const alertCollection = useMemo(() => createAlertCollection(alerts), [alerts]);
+  const [radarEnabled, setRadarEnabled] = useState(false);
+  const [buoysEnabled, setBuoysEnabled] = useState(true);
+  const [alertsEnabled, setAlertsEnabled] = useState(true);
 
   return (
     <section className="panel map-panel" aria-label="Interactive Central Pacific map">
       <div className="map-toolbar">
         <div>
-          <span className="overline">Operational map</span>
+          <span className="overline">Weather map</span>
           <strong>{mode === 'islands' ? 'Hawaiian Islands' : 'Central & Eastern Pacific'}</strong>
         </div>
-        <div className="segmented-control" aria-label="Map extent">
-          <button className={mode === 'islands' ? 'is-active' : ''} type="button" onClick={() => onModeChange('islands')}>
-            <LocateFixed size={14} /> Islands
-          </button>
-          <button className={mode === 'pacific' ? 'is-active' : ''} type="button" onClick={() => onModeChange('pacific')}>
-            <Layers3 size={14} /> Pacific
-          </button>
+        <div className="map-toolbar__controls">
+          <div className="segmented-control" aria-label="Map extent">
+            <button className={mode === 'islands' ? 'is-active' : ''} type="button" onClick={() => onModeChange('islands')}>
+              <LocateFixed size={14} /> Islands
+            </button>
+            <button className={mode === 'pacific' ? 'is-active' : ''} type="button" onClick={() => onModeChange('pacific')}>
+              <Layers3 size={14} /> Pacific
+            </button>
+          </div>
+          <div className="map-layer-pills" aria-label="Map layers">
+            <button type="button" aria-pressed={radarEnabled} onClick={() => setRadarEnabled((value) => !value)}>
+              <CloudRain size={14} /> Radar
+            </button>
+            <button type="button" aria-pressed={buoysEnabled} onClick={() => setBuoysEnabled((value) => !value)}>
+              <RadioTower size={14} /> Buoys
+            </button>
+            <button type="button" aria-pressed={alertsEnabled} onClick={() => setAlertsEnabled((value) => !value)}>
+              Alerts
+            </button>
+          </div>
         </div>
       </div>
 
@@ -121,10 +127,12 @@ export function HawaiiMap({
           center={[20.75, -157.3]}
           zoom={6}
           minZoom={3}
-          maxZoom={10}
-          zoomControl={false}
+          maxZoom={11}
           attributionControl
           preferCanvas
+          fadeAnimation={false}
+          markerZoomAnimation={false}
+          worldCopyJump
         >
           <MapController
             mode={mode}
@@ -132,22 +140,19 @@ export function HawaiiMap({
             systems={systems}
             selectedSystemId={selectedSystemId}
           />
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
+          <BaseMapLayers radarEnabled={radarEnabled} />
 
-          {alertCollection.features.length > 0 && (
+          {alertsEnabled && alertCollection.features.length > 0 && (
             <GeoJSON
               key={alerts.map((alert) => alert.id).join(':')}
               data={alertCollection}
               style={() => ({
-                color: '#ff8067',
-                fillColor: '#ff8067',
-                fillOpacity: 0.13,
-                opacity: 0.75,
-                weight: 1.5,
-                dashArray: '6 5',
+                color: '#c44e42',
+                fillColor: '#ef8068',
+                fillOpacity: 0.16,
+                opacity: 0.8,
+                weight: 2,
+                dashArray: '7 5',
               })}
             />
           )}
@@ -160,10 +165,10 @@ export function HawaiiMap({
                 center={[island.latitude, island.longitude]}
                 radius={isSelected ? 8 : 5}
                 pathOptions={{
-                  color: isSelected ? '#f0ead7' : island.accent,
+                  color: isSelected ? '#173d57' : '#ffffff',
                   fillColor: island.accent,
-                  fillOpacity: isSelected ? 1 : 0.78,
-                  weight: isSelected ? 3 : 1.5,
+                  fillOpacity: 1,
+                  weight: isSelected ? 3 : 2,
                 }}
                 eventHandlers={{ click: () => onSelectIsland(island.id) }}
               >
@@ -174,50 +179,50 @@ export function HawaiiMap({
             );
           })}
 
+          {buoysEnabled && <BuoyMarkers buoys={buoys} />}
+
           {systems.map((system) => {
             const selected = system.id === selectedSystemId;
             const center: LatLngExpression = [system.latitude, system.longitude];
             return (
-              <Fragment key={system.id}>
-                <Polyline
-                  positions={[center, projectedPosition(system)]}
-                  pathOptions={{ color: '#ff8067', weight: selected ? 2 : 1, opacity: selected ? 0.9 : 0.45, dashArray: '5 7' }}
-                />
-                <CircleMarker
-                  center={center}
-                  radius={selected ? 11 : 8}
-                  pathOptions={{
-                    color: selected ? '#fff8e7' : '#ff8067',
-                    fillColor: '#d9473f',
-                    fillOpacity: 0.9,
-                    weight: selected ? 3 : 2,
-                  }}
-                  eventHandlers={{ click: () => onSelectSystem(system) }}
-                >
-                  <Tooltip direction="top" offset={[0, -10]} permanent={selected}>
-                    {system.name} · {system.intensityKt} kt
-                  </Tooltip>
-                  <Popup>
-                    <strong>{system.name}</strong>
-                    <br />
-                    {stormCategory(system.intensityKt)} · {system.pressureMb} mb
-                    <br />
-                    Moving {degreesToCompass(system.movementDirectionDegrees)} at {system.movementSpeedKt} kt
-                  </Popup>
-                </CircleMarker>
-              </Fragment>
+              <CircleMarker
+                key={system.id}
+                center={center}
+                radius={selected ? 11 : 8}
+                pathOptions={{
+                  color: '#ffffff',
+                  fillColor: system.intensityKt >= 64 ? '#c72f42' : '#e17a38',
+                  fillOpacity: 0.96,
+                  weight: selected ? 4 : 2,
+                }}
+                eventHandlers={{ click: () => onSelectSystem(system) }}
+              >
+                <Tooltip direction="top" offset={[0, -10]} permanent={selected}>
+                  {system.name} · {system.intensityKt} kt
+                </Tooltip>
+                <Popup>
+                  <strong>{system.name}</strong>
+                  <br />
+                  {stormCategory(system.intensityKt)} · {system.pressureMb} mb
+                  <br />
+                  Moving {degreesToCompass(system.movementDirectionDegrees)} at {system.movementSpeedKt} kt
+                  <br />
+                  Select the storm to open the full tracker.
+                </Popup>
+              </CircleMarker>
             );
           })}
         </MapContainer>
 
-        <div className="map-coordinate">
-          <Crosshair size={13} />
-          <span>NOAA / NWS operational data</span>
-        </div>
+        {radarEnabled && (
+          <div className="radar-legend" aria-label="Radar reflectivity legend">
+            <span>Light rain</span><i /><i /><i /><i /><span>Heavy</span>
+          </div>
+        )}
         <div className="map-legend" aria-label="Map legend">
-          <span><i className="legend-dot legend-dot--island" /> Island station</span>
+          <span><i className="legend-dot legend-dot--island" /> Island</span>
+          <span><i className="legend-dot legend-dot--buoy" /> NOAA buoy</span>
           <span><i className="legend-dot legend-dot--storm" /> Tropical system</span>
-          <span><i className="legend-line" /> Alert area</span>
         </div>
       </div>
     </section>

@@ -14,7 +14,7 @@ export function Masthead({ now, isRefreshing, onRefresh }: MastheadProps) {
       <div className="masthead__brand">
         <BrandMark />
         <div>
-          <p className="eyebrow">Hawaiʻi Weather Desk</p>
+          <p className="eyebrow">Weather across the islands</p>
           <h1>Pacific Signal</h1>
         </div>
       </div>

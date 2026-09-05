@@ -1,7 +1,6 @@
 import { ArrowUpRight, Radio } from 'lucide-react';
 import { degreesToCompass, stormCategory } from '../lib/weather';
 import type { FeedStatus, TropicalSystem } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
 
 interface TropicalListProps {
   systems: TropicalSystem[];
@@ -18,7 +17,7 @@ export function TropicalList({ systems, status, selectedSystemId, onSelect }: Tr
           <span className="overline">Tropical desk</span>
           <h3>Pacific systems</h3>
         </div>
-        <FeedBadge status={status} />
+        <span className="panel-heading__count">{systems.length}</span>
       </div>
 
       <div className="tropical-list__body">

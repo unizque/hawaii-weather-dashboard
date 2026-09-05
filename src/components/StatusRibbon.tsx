@@ -1,15 +1,14 @@
-import { Activity, BellRing, RadioTower, Waves } from 'lucide-react';
-import type { FeedStatus } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
+import { Activity, BellRing, Clock3, RadioTower, Waves } from 'lucide-react';
+import { formatAge } from '../lib/weather';
 
 interface StatusRibbonProps {
   alertCount: number;
   systemCount: number;
   buoyCount: number;
-  overallStatus: FeedStatus;
+  updatedAt: string | null;
 }
 
-export function StatusRibbon({ alertCount, systemCount, buoyCount, overallStatus }: StatusRibbonProps) {
+export function StatusRibbon({ alertCount, systemCount, buoyCount, updatedAt }: StatusRibbonProps) {
   const stats = [
     { label: 'Island stations', value: '5', icon: RadioTower, tone: 'cyan' },
     { label: 'Active alerts', value: String(alertCount).padStart(2, '0'), icon: BellRing, tone: alertCount ? 'amber' : 'mint' },
@@ -20,8 +19,8 @@ export function StatusRibbon({ alertCount, systemCount, buoyCount, overallStatus
   return (
     <section className="status-ribbon" aria-label="Network summary">
       <div className="status-ribbon__intro">
-        <span className="overline">Central Pacific network</span>
-        <FeedBadge status={overallStatus} />
+        <span className="overline">Island weather at a glance</span>
+        <span className="status-ribbon__updated"><Clock3 size={13} /> Updated {formatAge(updatedAt)}</span>
       </div>
       {stats.map(({ label, value, icon: Icon, tone }) => (
         <div className="status-ribbon__stat" key={label}>

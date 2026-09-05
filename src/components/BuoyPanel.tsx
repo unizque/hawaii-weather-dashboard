@@ -1,7 +1,6 @@
 import { Waves, Wind } from 'lucide-react';
 import { formatAge } from '../lib/weather';
 import type { BuoyReading, FeedStatus } from '../types/weather';
-import { FeedBadge } from './FeedBadge';
 
 interface BuoyPanelProps {
   buoys: BuoyReading[];
@@ -20,10 +19,10 @@ export function BuoyPanel({ buoys, status, updatedAt }: BuoyPanelProps) {
     <section className="panel buoy-panel">
       <div className="panel-heading panel-heading--compact">
         <div>
-          <span className="overline">Marine pulse</span>
+          <span className="overline">Mapped offshore station</span>
           <h3>{buoy ? `Buoy ${buoy.stationId}` : 'Offshore network'}</h3>
         </div>
-        <FeedBadge status={status} />
+        <Waves size={19} aria-hidden="true" />
       </div>
 
       {buoy ? (
@@ -41,7 +40,10 @@ export function BuoyPanel({ buoys, status, updatedAt }: BuoyPanelProps) {
           <p>{buoy.name} · {formatAge(buoy.observedAt || updatedAt)}</p>
         </div>
       ) : (
-        <div className="empty-state"><Waves size={20} /><p>Waiting for the next buoy sync.</p></div>
+        <div className="empty-state">
+          <Waves size={20} />
+          <p>{status === 'loading' ? 'Checking the buoy network…' : 'Buoy observations are temporarily unavailable.'}</p>
+        </div>
       )}
     </section>
   );
